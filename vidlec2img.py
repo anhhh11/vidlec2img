@@ -47,7 +47,6 @@ def menu():
     parser.add_argument("-g","--to-grayscale",\
                         help="Font scale\n Default: {0}".format(ConvertVideoLectureToImage.TO_GRAYSCALE),\
                         default=ConvertVideoLectureToImage.TO_GRAYSCALE,action="store_true")
-
     parser.add_argument("-fs","--font-scale",\
                         help="Font scale\n Default: {0}".format(ConvertVideoLectureToImage.FONTSCALE),\
                         default=ConvertVideoLectureToImage.FONTSCALE,type=float)

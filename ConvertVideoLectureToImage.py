@@ -15,13 +15,14 @@ import math
 from os import path
 import os.path
 import sys
+import textwrap
 class ConvertVideoLectureToImage:
     SUBTITLE_EXT = '.srt'
     SUB_MARGIN_LEFT_PERCENT  = 0.1
     SUB_MARGIN_RIGHT_PERCENT  = 0.1
     SUB_MARGIN_BOTTOM_PERCENT = 0.1
     SUB_LINE_MARGIN_BOTTOM = 0.1
-    FONT_FACE = "FONT_HERSHEY_PLAIN"
+    FONT_FACE = "FONT_HERSHEY_DUPLEX"
     TEXT_COLOR = (255,255,255) # (B,G,R)
     FONTSCALE = 1.5
     THICKNESS = 1
@@ -80,13 +81,9 @@ class ConvertVideoLectureToImage:
         text_width,text_height = cv2.getTextSize(text,fontFace,fontScale,thickness)[0] # width,height
         content_width = self.width*(1 - self.SUB_MARGIN_LEFT_PERCENT - self.SUB_MARGIN_RIGHT_PERCENT)
         if text_width > content_width:
-            num_line  = int(math.ceil(float(text_width) / content_width))
             char_avg_width = int(float(text_width)/len(text))
             len_line_limit = int(float(content_width)/char_avg_width)
-            line_list = [text[i-len_line_limit:i] \
-                    for i in \
-                        range(len_line_limit,len_line_limit*(num_line-1)+1,len_line_limit)]
-            line_list.append(text[(num_line-1)*len_line_limit:])
+            line_list = textwrap.wrap(text,width=len_line_limit)
         else:
             line_list = [text]
         pos_x = int(self.SUB_MARGIN_LEFT_PERCENT*content_width)
