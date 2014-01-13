@@ -78,7 +78,7 @@ class ConvertVideoLectureToImage:
 
     def wrapText(self,text,fontFace,fontScale,thickness):
         text_width,text_height = cv2.getTextSize(text,fontFace,fontScale,thickness)[0] # width,height
-        content_width = self.width*(1 - self.SUB_MARGIN_LEFT_PERCENT - self.SUB_MARGIN_LEFT_PERCENT)
+        content_width = self.width*(1 - self.SUB_MARGIN_LEFT_PERCENT - self.SUB_MARGIN_RIGHT_PERCENT)
         if text_width > content_width:
             num_line  = int(math.ceil(float(text_width) / content_width))
             char_avg_width = int(float(text_width)/len(text))
@@ -89,7 +89,7 @@ class ConvertVideoLectureToImage:
             line_list.append(text[(num_line-1)*len_line_limit:])
         else:
             line_list = [text]
-        pos_x = int(self.SUB_MARGIN_RIGHT_PERCENT*content_width)
+        pos_x = int(self.SUB_MARGIN_LEFT_PERCENT*content_width)
         pos_y = int(self.height - \
                     text_height*(len(line_list)-1) - \
                     self.SUB_LINE_MARGIN_BOTTOM*text_height*(len(line_list)-1) - \
