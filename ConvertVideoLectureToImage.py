@@ -132,6 +132,43 @@ class ConvertVideoLectureToImage:
             frame = self.readFrameAtMil(self.videoCapture,from_time)
             text_color = self.TEXT_COLOR # (B,G,R)
             for line_num,line in enumerate(textProps['lineList']):
+
+                cv2.putText(frame,\
+                            line,\
+                            (textProps['x']+2,\
+                            textProps['y'] + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
+                            textProps['fontFace'],\
+                            textProps['fontScale'],\
+                            tuple(map(lambda x:255-x,text_color)),\
+                            textProps['thickness'],\
+                            lineType=cv2.CV_AA)
+                cv2.putText(frame,\
+                            line,\
+                            (textProps['x']-2,\
+                            textProps['y'] + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
+                            textProps['fontFace'],\
+                            textProps['fontScale'],\
+                            tuple(map(lambda x:255-x,text_color)),\
+                            textProps['thickness'],\
+                            lineType=cv2.CV_AA)
+                cv2.putText(frame,\
+                            line,\
+                            (textProps['x'],\
+                            textProps['y']+2 + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
+                            textProps['fontFace'],\
+                            textProps['fontScale'],\
+                            tuple(map(lambda x:255-x,text_color)),\
+                            textProps['thickness'],\
+                            lineType=cv2.CV_AA)
+                cv2.putText(frame,\
+                            line,\
+                            (textProps['x'],\
+                            textProps['y']-2 + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
+                            textProps['fontFace'],\
+                            textProps['fontScale'],\
+                            tuple(map(lambda x:255-x,text_color)),\
+                            textProps['thickness'],\
+                            lineType=cv2.CV_AA)
                 cv2.putText(frame,\
                             line,\
                             (textProps['x'],\
@@ -141,6 +178,7 @@ class ConvertVideoLectureToImage:
                             text_color,\
                             textProps['thickness'],\
                             lineType=cv2.CV_AA)
+
             #cv2.imshow("img",frame)
             self.writeFrameToImg(frame,img_file_out)
 
@@ -195,7 +233,7 @@ class ConvertVideoLectureToImage:
             count = float(count)
             percent = 100*count/complete
             sys.stdout.write('\r[{0}] - {1}% - {2}/{3} Total'.format('#'*int(math.ceil(bar_width*count/complete))\
-                                                              , round(percent,3)
+                                                              , round(percent,2)
                                                               , int(count)\
                                                               , complete))
 
