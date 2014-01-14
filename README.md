@@ -17,4 +17,4 @@ Can download numpy and opencv and pillow from here: http://www.lfd.uci.edu/~gohl
 
 I've added text border's option ( or text shadow) with --border-size and --border-color parameters
 
-To write unicode subtitle turn on -U flag and set path to TrueFont type (for example: Arial) ; and this tool allow to set Font size.
+To write unicode subtitle turn on -U flag and set path to TrueFont type using -fp (for example: -fp C:/fonts/Arial.ttf ) ; and this tool allow to set Font size.

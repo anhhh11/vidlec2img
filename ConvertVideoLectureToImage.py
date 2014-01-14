@@ -55,6 +55,7 @@ class ConvertVideoLectureToImage:
 
     def __init__(self,videoPath,subPath=r'',outputPath=''):
         self.videoPath = videoPath
+        self.subPath = r''
         if outputPath == '':
             self.outputPath = videoPath.split('.')[0] + '/'
             if not path.isdir(self.outputPath):
