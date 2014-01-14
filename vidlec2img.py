@@ -30,8 +30,8 @@ def menu():
     parser = argparse.ArgumentParser(description='Convert video lecture to image')
     parser.add_argument('-vp','--video-file-path',help="Path to video file",required=True)
     parser.add_argument('-sp','--sub-file-path',help="Path to subtitle file",default='')
-    parser.add_argument('-sc',"--subtitle-color",help="Subtitle color B G R\n Default: %s" % str(ConvertVideoLectureToImage.TEXT_COLOR)\
-                        ,type=int,nargs=3,required=False,metavar=('B','G','R'),default=ConvertVideoLectureToImage.TEXT_COLOR)
+    parser.add_argument('-sc',"--subtitle-color",help="Subtitle color R G B, value=0..255\n Default: %s" % str(ConvertVideoLectureToImage.TEXT_COLOR)\
+                        ,type=int,nargs=3,required=False,metavar=('R','G','B'),default=ConvertVideoLectureToImage.TEXT_COLOR)
     parser.add_argument('-sm',"--subtitle-margin-percent",\
                 help="""Subtitle margin: left right bottom
                         Default: left:{0} right:{1} bottom:{2}
@@ -44,9 +44,39 @@ def menu():
                                         ConvertVideoLectureToImage.SUB_MARGIN_BOTTOM_PERCENT,\
                                         )
                             )
-    parser.add_argument("-g","--to-grayscale",\
+    parser.add_argument("-G","--to-grayscale",\
                         help="Font scale\n Default: {0}".format(ConvertVideoLectureToImage.TO_GRAYSCALE),\
-                        default=ConvertVideoLectureToImage.TO_GRAYSCALE,action="store_true")
+                        default=ConvertVideoLectureToImage.TO_GRAYSCALE,
+                        action="store_true")
+    parser.add_argument('-U',"--unicode-mode",\
+                        help="Support unicode subtitle\n Default: {0}".format(ConvertVideoLectureToImage.UNICODE),\
+                        default=ConvertVideoLectureToImage.UNICODE,\
+                        action="store_true")
+
+    parser.add_argument('-fp',"--font-path",\
+                        help="Font path (required in Unicode mode only) ( require TrueFont type)\n Default: {0}"\
+                                        .format(ConvertVideoLectureToImage.FONT_PATH),\
+                        default=ConvertVideoLectureToImage.FONT_PATH,\
+                        metavar=("FONT PATH"))
+
+    parser.add_argument('-fsz',"--font-size",\
+                        help="Font size (in Unicode mode only)\n Default: {0}".format(ConvertVideoLectureToImage.FONT_SIZE),\
+                        default=ConvertVideoLectureToImage.FONT_SIZE,\
+                        metavar=("FONT SIZE"),
+                        type=int)
+
+    parser.add_argument('-bsz',"--border-size",\
+                        help="Text border size\n Default: {0}".format(ConvertVideoLectureToImage.BORDER_SIZE),\
+                        default=ConvertVideoLectureToImage.BORDER_SIZE,\
+                        metavar=("BORDER SIZE"),
+                        type=int)
+
+    parser.add_argument('-bcl',"--border-color",\
+                        help="Text border color\n Default: {0}".format(ConvertVideoLectureToImage.BORDER_COLOR),\
+                        default=ConvertVideoLectureToImage.BORDER_COLOR,\
+                        metavar=(("R","G","B")),
+                        type=int,nargs=3)
+
     parser.add_argument("-fs","--font-scale",\
                         help="Font scale\n Default: {0}".format(ConvertVideoLectureToImage.FONTSCALE),\
                         default=ConvertVideoLectureToImage.FONTSCALE,type=float)
@@ -67,11 +97,13 @@ def menu():
 
     parser.add_argument('-tn',"--thickness",\
                         help="Thickness\n Default: {0}".format(ConvertVideoLectureToImage.THICKNESS),\
-                        default=ConvertVideoLectureToImage.THICKNESS)
+                        default=ConvertVideoLectureToImage.THICKNESS,type=int)
     parser.add_argument('-ct',"--collision-shifting-time",\
                         help="Collision shifting time(mil)\n Default: {0}"\
                             .format(ConvertVideoLectureToImage.COLLISION_SHIFTING_MILISECONDS),\
                             default=ConvertVideoLectureToImage.COLLISION_SHIFTING_MILISECONDS)
+
+
     parser.add_argument('-t',"--test-2n-image",\
                         help="Generate only 2*n first images. Default: n=%i" % ConvertVideoLectureToImage.TEST_NUM_IMAGE,\
                         default=ConvertVideoLectureToImage.TEST_NUM_IMAGE,type=int)
@@ -91,6 +123,11 @@ def main():
     c.THICKNESS = args.thickness
     c.TEXT_COLOR = args.subtitle_color
     c.TO_GRAYSCALE = args.to_grayscale
+    c.UNICODE = args.unicode_mode
+    c.FONT_SIZE = args.font_size
+    c.FONT_PATH = args.font_path
+    c.BORDER_COLOR = args.border_color
+    c.BORDER_SIZE = args.border_size
     c.SUB_MARGIN_LEFT_PERCENT,c.SUB_MARGIN_RIGHT_PERCENT,c.SUB_MARGIN_BOTTOM_PERCENT=\
         args.subtitle_margin_percent
     c.COLLISION_SHIFTING_MILISECONDS = args.collision_shifting_time

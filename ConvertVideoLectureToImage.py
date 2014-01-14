@@ -16,20 +16,30 @@ from os import path
 import os.path
 import sys
 import textwrap
+from PIL import Image,ImageDraw,ImageFont
+from multiprocessing import Process
 class ConvertVideoLectureToImage:
     SUBTITLE_EXT = '.srt'
     SUB_MARGIN_LEFT_PERCENT  = 0.1
     SUB_MARGIN_RIGHT_PERCENT  = 0.1
     SUB_MARGIN_BOTTOM_PERCENT = 0.1
     SUB_LINE_MARGIN_BOTTOM = 0.1
+    COLLISION_SHIFTING_MILISECONDS = 0
+    TO_GRAYSCALE = False
+    TEST_NUM_IMAGE = 0
+    UNICODE = False
+    #ascii mode
     FONT_FACE = "FONT_HERSHEY_DUPLEX"
     TEXT_COLOR = (255,255,255) # (B,G,R)
     FONTSCALE = 1.5
     THICKNESS = 1
-    COLLISION_SHIFTING_MILISECONDS = 2
-    TO_GRAYSCALE = False
-    TEST = False
-    TEST_NUM_IMAGE = 0
+    #unicode mode
+    FONT_PATH = 'C:/arial.ttf'
+    FONT_SIZE = 25
+    #general
+    BORDER_SIZE = 1
+    BORDER_COLOR = ()
+
     def __init__(self,videoPath,subPath='',outputPath=''):
         self.videoPath = videoPath
         if outputPath == '':
@@ -42,14 +52,16 @@ class ConvertVideoLectureToImage:
         else:
             self.outputPath = outputPath
         if subPath == '':
-            self.subPath = self.getSubPathFromVideoPath(videoPath)
+            def getSubPathFromVideoPath(videoPath):
+                return videoPath.split('.')[0] + self.SUBTITLE_EXT
+            self.subPath = getSubPathFromVideoPath(videoPath)
             if not path.exists(self.subPath):
                 raise Exception("Cannot find subtitle file name " + self.subPath)
         else:
             self.subPath = subPath
-    @classmethod
-    def getSubPathFromVideoPath(cls,videoPath):
-        return videoPath.split('.')[0] + cls.SUBTITLE_EXT
+        if not self.BORDER_COLOR:
+            self.BORDER_COLOR = map(lambda x: 255-x,self.TEXT_COLOR)
+
     @staticmethod
     def readFrameAtMil(videoCapture,mil):
             while True:
@@ -68,8 +80,10 @@ class ConvertVideoLectureToImage:
         if not cv2.imwrite(self.outFilePath(filename),frame):
             raise Exception("Cannot write to output")
         return True
+
     def outFilePath(self,filename):
         return self.outputPath + '/' +filename
+
     @staticmethod
     def name_generator(prefix='image'):
         count = 0
@@ -77,8 +91,24 @@ class ConvertVideoLectureToImage:
             yield '{0}-{1:05d}.jpg'.format(prefix,count)
             count+=1
 
-    def wrapText(self,text,fontFace,fontScale,thickness):
-        text_width,text_height = cv2.getTextSize(text,fontFace,fontScale,thickness)[0] # width,height
+    def wrapTextUnicode(self,text):
+        text_width,text_height = self.font.getsize(text)
+        content_width = self.width*(1 - self.SUB_MARGIN_LEFT_PERCENT - self.SUB_MARGIN_RIGHT_PERCENT)
+        if text_width > content_width:
+            char_avg_width = int(float(text_width)/len(text))
+            len_line_limit = int(float(content_width)/char_avg_width)
+            line_list = textwrap.wrap(text,width=len_line_limit)
+        else:
+            line_list = [text]
+        pos_x = int(self.SUB_MARGIN_LEFT_PERCENT*self.width)
+        pos_y = int(self.height - \
+                    text_height*(len(line_list)-1) - \
+                    self.SUB_LINE_MARGIN_BOTTOM*text_height*(len(line_list)-1) - \
+                    self.SUB_MARGIN_BOTTOM_PERCENT*self.height)
+        return {'lineList':line_list,'x':pos_x,'y':pos_y,'lineHeight':text_height}
+
+    def wrapTextAscii(self,text):
+        text_width,text_height = cv2.getTextSize(text,self.FONT_FACE,self.FONTSCALE,self.THICKNESS)[0] # width,height
         content_width = self.width*(1 - self.SUB_MARGIN_LEFT_PERCENT - self.SUB_MARGIN_RIGHT_PERCENT)
         if text_width > content_width:
             char_avg_width = int(float(text_width)/len(text))
@@ -91,23 +121,74 @@ class ConvertVideoLectureToImage:
                     text_height*(len(line_list)-1) - \
                     self.SUB_LINE_MARGIN_BOTTOM*text_height*(len(line_list)-1) - \
                     self.SUB_MARGIN_BOTTOM_PERCENT*self.height)
-        return {'lineList':line_list,'x':pos_x,'y':pos_y,'fontFace':fontFace\
-                ,'fontScale':fontScale,'thickness':thickness,'lineHeight':text_height}
+        return {'lineList':line_list,'x':pos_x,'y':pos_y,'lineHeight':text_height}
 
     def prepareVidAndSub(self):
         self.sub = self.readSubtitle()
+        #font prepare
+        self.FONT_FACE = eval("cv2."+self.FONT_FACE)
+        if self.UNICODE == True:
+            if not self.FONT_PATH == '':
+                self.font = ImageFont.truetype(self.FONT_PATH,self.FONT_SIZE)
+            else:
+                raise Exception("Need FONT_PATH argument for Unicode mode")
         self.videoCapture = cv2.VideoCapture()
-        #self.videoCapture.set(CV_CAP_PROP_FOURCC,CV_FOURCC('D','I','V','4'))
         if not self.videoCapture.open(self.videoPath):
             raise Exception("Cannot open video file")
+        self.width = int(self.videoCapture.get(cv.CV_CAP_PROP_FRAME_WIDTH))
+        self.height = int(self.videoCapture.get(cv.CV_CAP_PROP_FRAME_HEIGHT))
 
     def toGrayscale(self,frame):
         new_frame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
         return new_frame
+
+    def genBorderPos(self,x,y):
+        return [(x-i,y-j) for i in range(-self.BORDER_SIZE,self.BORDER_SIZE+1) for j in range(-self.BORDER_SIZE,self.BORDER_SIZE+1)]
+
+    def addTextUnicode(self,filename,textProps,frame):
+        self.writeFrameToImg(frame,filename)
+        file_path = self.outFilePath(filename)
+        image_file = Image.open(file_path)
+        img_draw = ImageDraw.Draw(image_file)
+        for line_num,text in enumerate(textProps['lineList']):
+            for x,y in self.genBorderPos(textProps['x'],textProps['y']):
+                img_draw.text((x,
+                            y + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),
+                            text.decode("utf-8"),
+                            self.rgb2hex(self.BORDER_COLOR[0],self.BORDER_COLOR[1],self.BORDER_COLOR[2]),
+                            self.font)
+            img_draw.text((textProps['x'],
+                            textProps['y'] + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),
+                            text.decode("utf-8"),
+                            self.rgb2hex(self.TEXT_COLOR[0],self.TEXT_COLOR[1],self.TEXT_COLOR[2]),
+                            self.font)
+            image_file.save(file_path)
+
+    def addTextAscii(self,filename,textProps,frame):
+        for line_num,line in enumerate(textProps['lineList']):
+            for x,y in self.genBorderPos(textProps['x'],textProps['y']):
+                cv2.putText(frame,\
+                        line,\
+                        (x,\
+                        y + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
+                        self.FONT_FACE,\
+                        self.FONTSCALE,\
+                        [self.BORDER_COLOR[2],self.BORDER_COLOR[1],self.BORDER_COLOR[0]],\
+                        self.THICKNESS,\
+                        lineType=cv2.CV_AA)
+            cv2.putText(frame,\
+                        line,\
+                        (textProps['x'],\
+                        textProps['y'] + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
+                        self.FONT_FACE,\
+                        self.FONTSCALE,\
+                        (self.TEXT_COLOR[2],self.TEXT_COLOR[1],self.TEXT_COLOR[0]),\
+                        self.THICKNESS,\
+                        lineType=cv2.CV_AA)
+            self.writeFrameToImg(frame,filename)
+
     def genImage(self):
         self.prepareVidAndSub()
-        self.width = int(self.videoCapture.get(cv.CV_CAP_PROP_FRAME_WIDTH))
-        self.height = int(self.videoCapture.get(cv.CV_CAP_PROP_FRAME_HEIGHT))
         name_gen = self.name_generator()
         #test mode
         if self.TEST_NUM_IMAGE > 0:
@@ -115,90 +196,31 @@ class ConvertVideoLectureToImage:
 
         total_subtitle_row = len(self.sub)
         progress_bar = self.progressBar(total_subtitle_row)
+
+        addText = self.addTextUnicode if self.UNICODE else self.addTextAscii
+        wrapText = self.wrapTextUnicode if self.UNICODE else self.wrapTextAscii
+
         for row_num,row in enumerate(self.sub):
+            from_time,to_time = row['from'],row['to']
+            textProps = wrapText(row['text'])
+
             #get image at from_time
             img_file_out = name_gen.next()
-            #if path.exists(self.outFilePath(img_file_out)):
-            #    continue
-
-            from_time = row['from']
-            to_time = row['to']
-            textProps = self.wrapText(row['text'],\
-                                fontFace=eval("cv2."+self.FONT_FACE),\
-                                fontScale=self.FONTSCALE,\
-                                thickness=self.THICKNESS
-                                )
-
             frame = self.readFrameAtMil(self.videoCapture,from_time)
-            text_color = self.TEXT_COLOR # (B,G,R)
-            for line_num,line in enumerate(textProps['lineList']):
-
-                cv2.putText(frame,\
-                            line,\
-                            (textProps['x']+2,\
-                            textProps['y'] + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
-                            textProps['fontFace'],\
-                            textProps['fontScale'],\
-                            tuple(map(lambda x:255-x,text_color)),\
-                            textProps['thickness'],\
-                            lineType=cv2.CV_AA)
-                cv2.putText(frame,\
-                            line,\
-                            (textProps['x']-2,\
-                            textProps['y'] + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
-                            textProps['fontFace'],\
-                            textProps['fontScale'],\
-                            tuple(map(lambda x:255-x,text_color)),\
-                            textProps['thickness'],\
-                            lineType=cv2.CV_AA)
-                cv2.putText(frame,\
-                            line,\
-                            (textProps['x'],\
-                            textProps['y']+2 + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
-                            textProps['fontFace'],\
-                            textProps['fontScale'],\
-                            tuple(map(lambda x:255-x,text_color)),\
-                            textProps['thickness'],\
-                            lineType=cv2.CV_AA)
-                cv2.putText(frame,\
-                            line,\
-                            (textProps['x'],\
-                            textProps['y']-2 + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
-                            textProps['fontFace'],\
-                            textProps['fontScale'],\
-                            tuple(map(lambda x:255-x,text_color)),\
-                            textProps['thickness'],\
-                            lineType=cv2.CV_AA)
-                cv2.putText(frame,\
-                            line,\
-                            (textProps['x'],\
-                            textProps['y'] + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
-                            textProps['fontFace'],\
-                            textProps['fontScale'],\
-                            text_color,\
-                            textProps['thickness'],\
-                            lineType=cv2.CV_AA)
-
-            #cv2.imshow("img",frame)
-            self.writeFrameToImg(frame,img_file_out)
+            addText(img_file_out,textProps,frame)
 
             #get image at to_time
             img_file_out = name_gen.next()
-            #if path.exists(self.outFilePath(img_file_out)):
-            #    continue
             frame = self.readFrameAtMil(self.videoCapture,to_time)
             self.writeFrameToImg(frame,img_file_out)
 
             progress_bar(row_num+1)
+
         self.videoCapture.release()
         print '\nDone!'
 
-    def fixSubTextCollision(self,sub):
-        for i in range(1,len(sub)):
-            if sub[i]['from']==sub[i-1]['to']:
-                sub[i]['from'] += self.COLLISION_SHIFTING_MILISECONDS
 
-    def readSubtitle(self,fix=True):
+    def readSubtitle(self):
         sub = {'from':0,'to':0,'text':''}
         sign = {'new':'\n','timeFromTo':'-->'}
         subList = []
@@ -218,7 +240,11 @@ class ConvertVideoLectureToImage:
                     sub['from'],sub['to']= map(ConvertVideoLectureToImage.toMilliseconds, line.replace(' ','').replace('\n','').split(sign['timeFromTo']))
                     continue
                 sub['text'] += ' '+line
-        if fix:
+        if self.COLLISION_SHIFTING_MILISECONDS>0:
+            def fixSubTextCollision(self,sub):
+                for i in range(1,len(sub)):
+                    if sub[i]['from']==sub[i-1]['to']:
+                        sub[i]['from'] += self.COLLISION_SHIFTING_MILISECONDS
             self.fixSubTextCollision(subList)
         return subList
 
@@ -227,6 +253,7 @@ class ConvertVideoLectureToImage:
         hours,minutes,seconds = timeString.split(':')
         seconds,miliseconds = seconds.split(',')
         return int(miliseconds)+3600000*int(hours)+60000*int(minutes)+1000*int(seconds)
+
     @staticmethod
     def progressBar(complete,bar_width=30):
         def run(count):
@@ -238,3 +265,7 @@ class ConvertVideoLectureToImage:
                                                               , complete))
 
         return run
+
+    @staticmethod
+    def rgb2hex(r, g, b):
+        return '#{:02x}{:02x}{:02x}'.format(r, g, b)
