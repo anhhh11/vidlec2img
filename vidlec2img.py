@@ -24,6 +24,10 @@
 #http://extr3metech.wordpress.com/2012/09/23/convert-photo-to-grayscale-with-python-opencv/
 #text progress
 #http://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console
+#draw unicode text
+#http://stackoverflow.com/questions/7698231/python-pil-draw-multiline-text-on-image
+#text show and border
+#http://stackoverflow.com/questions/18974194/text-shadow-with-python
 from ConvertVideoLectureToImage import *
 import argparse
 def menu():
