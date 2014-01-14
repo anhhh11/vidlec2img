@@ -16,8 +16,10 @@ from os import path
 import os.path
 import sys
 import textwrap
+import pysrt
 from PIL import Image,ImageDraw,ImageFont
 from multiprocessing import Process
+from datetime import timedelta
 class ConvertVideoLectureToImage:
     SUBTITLE_EXT = '.srt'
     SUB_MARGIN_LEFT_PERCENT  = 0.1
@@ -29,18 +31,29 @@ class ConvertVideoLectureToImage:
     TEST_NUM_IMAGE = 0
     UNICODE = False
     #ascii mode
-    FONT_FACE = "FONT_HERSHEY_DUPLEX"
-    TEXT_COLOR = (255,255,255) # (B,G,R)
+    FONT_FACE = "FONT_HERSHEY_PLAIN"
+    TEXT_COLOR = [255,255,255] # (R, G, B)
     FONTSCALE = 1.5
     THICKNESS = 1
     #unicode mode
-    FONT_PATH = 'C:/arial.ttf'
+    FONT_PATH = ''
     FONT_SIZE = 25
     #general
     BORDER_SIZE = 1
-    BORDER_COLOR = ()
+    BORDER_COLOR = list()
 
-    def __init__(self,videoPath,subPath='',outputPath=''):
+    SHOW_MID = False
+    SHOW_END = True
+    SHOW_TIME = False
+
+    COUNT_INCREMENT = 1
+
+    TIME_MARGIN_RIGHT_PERCENT = 0.2
+    TIME_MARGIN_TOP_PERCENT = 0.05
+
+    IMAGE_OUTPUT_TYPE = 'png'
+
+    def __init__(self,videoPath,subPath=r'',outputPath=''):
         self.videoPath = videoPath
         if outputPath == '':
             self.outputPath = videoPath.split('.')[0] + '/'
@@ -51,6 +64,7 @@ class ConvertVideoLectureToImage:
                     os.mkdir(self.outputPath + '_')
         else:
             self.outputPath = outputPath
+
         if subPath == '':
             def getSubPathFromVideoPath(videoPath):
                 return videoPath.split('.')[0] + self.SUBTITLE_EXT
@@ -59,8 +73,7 @@ class ConvertVideoLectureToImage:
                 raise Exception("Cannot find subtitle file name " + self.subPath)
         else:
             self.subPath = subPath
-        if not self.BORDER_COLOR:
-            self.BORDER_COLOR = map(lambda x: 255-x,self.TEXT_COLOR)
+
 
     @staticmethod
     def readFrameAtMil(videoCapture,mil):
@@ -84,11 +97,10 @@ class ConvertVideoLectureToImage:
     def outFilePath(self,filename):
         return self.outputPath + '/' +filename
 
-    @staticmethod
-    def name_generator(prefix='image'):
+    def name_generator(self,prefix='image'):
         count = 0
         while True:
-            yield '{0}-{1:05d}.jpg'.format(prefix,count)
+            yield '{0}-{1:05d}.{2}'.format(prefix,count,self.IMAGE_OUTPUT_TYPE)
             count+=1
 
     def wrapTextUnicode(self,text):
@@ -124,6 +136,11 @@ class ConvertVideoLectureToImage:
         return {'lineList':line_list,'x':pos_x,'y':pos_y,'lineHeight':text_height}
 
     def prepareVidAndSub(self):
+        if self.SHOW_MID: self.COUNT_INCREMENT+=1
+        if self.SHOW_END: self.COUNT_INCREMENT+=1
+        if len(self.BORDER_COLOR)==0:
+            self.BORDER_COLOR = map(lambda x: 255-x,self.TEXT_COLOR)
+
         self.sub = self.readSubtitle()
         #font prepare
         self.FONT_FACE = eval("cv2."+self.FONT_FACE)
@@ -145,7 +162,7 @@ class ConvertVideoLectureToImage:
     def genBorderPos(self,x,y):
         return [(x-i,y-j) for i in range(-self.BORDER_SIZE,self.BORDER_SIZE+1) for j in range(-self.BORDER_SIZE,self.BORDER_SIZE+1)]
 
-    def addTextUnicode(self,filename,textProps,frame):
+    def addTextUnicode(self,filename,textProps,frame,miltime):
         self.writeFrameToImg(frame,filename)
         file_path = self.outFilePath(filename)
         image_file = Image.open(file_path)
@@ -162,9 +179,22 @@ class ConvertVideoLectureToImage:
                             text.decode("utf-8"),
                             self.rgb2hex(self.TEXT_COLOR[0],self.TEXT_COLOR[1],self.TEXT_COLOR[2]),
                             self.font)
-            image_file.save(file_path)
+        if self.SHOW_TIME:
+            timePos = self.getTimePos()
+            time = self.milToHumanreadableStr(miltime)
+            for x,y in self.genBorderPos(timePos[0],timePos[1]):
+                img_draw.text(timePos,
+                            time,
+                            self.rgb2hex(self.BORDER_COLOR[0],self.BORDER_COLOR[1],self.BORDER_COLOR[2]),
+                            self.font)
+            img_draw.text(timePos,
+                            time,
+                            self.rgb2hex(self.TEXT_COLOR[0],self.TEXT_COLOR[1],self.TEXT_COLOR[2]),
+                            self.font)
 
-    def addTextAscii(self,filename,textProps,frame):
+        image_file.save(file_path)
+
+    def addTextAscii(self,filename,textProps,frame,miltime):
         for line_num,line in enumerate(textProps['lineList']):
             for x,y in self.genBorderPos(textProps['x'],textProps['y']):
                 cv2.putText(frame,\
@@ -182,23 +212,49 @@ class ConvertVideoLectureToImage:
                         textProps['y'] + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),\
                         self.FONT_FACE,\
                         self.FONTSCALE,\
+                        [self.TEXT_COLOR[2],self.TEXT_COLOR[1],self.TEXT_COLOR[0]],\
+                        self.THICKNESS,\
+                        lineType=cv2.CV_AA)
+
+        if self.SHOW_TIME:
+            timePos = self.getTimePos()
+            time = self.milToHumanreadableStr(miltime)
+            for x,y in self.genBorderPos(timePos[0],timePos[1]):
+                cv2.putText(frame,\
+                        time,\
+                        (x,y),
+                        self.FONT_FACE,\
+                        self.FONTSCALE,\
+                        [self.BORDER_COLOR[2],self.BORDER_COLOR[1],self.BORDER_COLOR[0]],\
+                        self.THICKNESS,\
+                        lineType=cv2.CV_AA)
+            cv2.putText(frame,\
+                        time,\
+                        timePos,
+                        self.FONT_FACE,\
+                        self.FONTSCALE,\
                         (self.TEXT_COLOR[2],self.TEXT_COLOR[1],self.TEXT_COLOR[0]),\
                         self.THICKNESS,\
                         lineType=cv2.CV_AA)
-            self.writeFrameToImg(frame,filename)
+        self.writeFrameToImg(frame,filename)
+
+    def getTimePos(self):
+        return tuple((int((1-self.TIME_MARGIN_RIGHT_PERCENT)*self.width),\
+                        int(self.TIME_MARGIN_TOP_PERCENT*self.height)))
 
     def genImage(self):
         self.prepareVidAndSub()
         name_gen = self.name_generator()
         #test mode
         if self.TEST_NUM_IMAGE > 0:
-            self.sub = self.sub[0:self.TEST_NUM_IMAGE+1]
+            self.sub = self.sub[0:self.TEST_NUM_IMAGE]
 
         total_subtitle_row = len(self.sub)
-        progress_bar = self.progressBar(total_subtitle_row)
+        progress_bar = self.progressBar(total_subtitle_row*self.COUNT_INCREMENT)
 
         addText = self.addTextUnicode if self.UNICODE else self.addTextAscii
         wrapText = self.wrapTextUnicode if self.UNICODE else self.wrapTextAscii
+
 
         for row_num,row in enumerate(self.sub):
             from_time,to_time = row['from'],row['to']
@@ -207,14 +263,25 @@ class ConvertVideoLectureToImage:
             #get image at from_time
             img_file_out = name_gen.next()
             frame = self.readFrameAtMil(self.videoCapture,from_time)
-            addText(img_file_out,textProps,frame)
+            addText(img_file_out,textProps,frame,from_time)
+
+            textProps['lineList'] = []
+            #get image at mid_time
+            if self.SHOW_MID == True:
+                img_file_out = name_gen.next()
+                mid_time = (from_time+to_time)/2
+                frame = self.readFrameAtMil(self.videoCapture,mid_time)
+                addText(img_file_out,textProps,frame,mid_time)
+                #self.writeFrameToImg(frame,img_file_out)
 
             #get image at to_time
-            img_file_out = name_gen.next()
-            frame = self.readFrameAtMil(self.videoCapture,to_time)
-            self.writeFrameToImg(frame,img_file_out)
+            if self.SHOW_END == True:
+                img_file_out = name_gen.next()
+                frame = self.readFrameAtMil(self.videoCapture,to_time)
+                addText(img_file_out,textProps,frame,to_time)
+                #self.writeFrameToImg(textProps,img_file_out)
 
-            progress_bar(row_num+1)
+            progress_bar((row_num+1)*self.COUNT_INCREMENT)
 
         self.videoCapture.release()
         print '\nDone!'
@@ -224,22 +291,10 @@ class ConvertVideoLectureToImage:
         sub = {'from':0,'to':0,'text':''}
         sign = {'new':'\n','timeFromTo':'-->'}
         subList = []
-        with open(self.subPath,'r') as f:
-            f.readline() #skip first empty line
-            f.readline()
-            while True:
-                line = f.readline()
-                if not line: break
-                if line == sign['new']:
-                    f.readline()
-                    sub['text'] = sub['text'].replace('\n','')
-                    subList.append(sub)
-                    sub = {'from':0,'to':0,'text':''}
-                    continue
-                if line.find(sign['timeFromTo']) != -1:
-                    sub['from'],sub['to']= map(ConvertVideoLectureToImage.toMilliseconds, line.replace(' ','').replace('\n','').split(sign['timeFromTo']))
-                    continue
-                sub['text'] += ' '+line
+        srt = pysrt.open(self.subPath,encoding="utf-8")
+        subList = [{'from':self.toMilliseconds(line.start),
+                    'to':self.toMilliseconds(line.end),
+                    'text':line.text} for line in srt]
         if self.COLLISION_SHIFTING_MILISECONDS>0:
             def fixSubTextCollision(self,sub):
                 for i in range(1,len(sub)):
@@ -249,10 +304,12 @@ class ConvertVideoLectureToImage:
         return subList
 
     @staticmethod
-    def toMilliseconds(timeString):
-        hours,minutes,seconds = timeString.split(':')
-        seconds,miliseconds = seconds.split(',')
-        return int(miliseconds)+3600000*int(hours)+60000*int(minutes)+1000*int(seconds)
+    def toMilliseconds(timeObj):
+        return int(timeObj.milliseconds)+3600000*int(timeObj.hours)+60000*int(timeObj.minutes)+1000*int(timeObj.seconds)
+
+    @staticmethod
+    def milToHumanreadableStr(milliseconds):
+        return str(timedelta(milliseconds=milliseconds))
 
     @staticmethod
     def progressBar(complete,bar_width=30):

@@ -12,4 +12,9 @@ Requirement:
 Python 2.7.6
 Numpy MKL-1.8.0
 OpenCV 2.4.7 or 2.4.8
-Can download numpy and opencv from here: http://www.lfd.uci.edu/~gohlke/pythonlibs/
+Pillow 2.3.0
+Can download numpy and opencv and pillow from here: http://www.lfd.uci.edu/~gohlke/pythonlibs/
+
+I've added text border's option ( or text shadow) with --border-size and --border-color parameters
+
+To write unicode subtitle turn on -U flag and set path to TrueFont type (for example: Arial) ; and this tool allow to set Font size.
