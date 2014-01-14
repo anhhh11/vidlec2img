@@ -172,12 +172,12 @@ class ConvertVideoLectureToImage:
             for x,y in self.genBorderPos(textProps['x'],textProps['y']):
                 img_draw.text((x,
                             y + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),
-                            text.decode("utf-8"),
+                            text,
                             self.rgb2hex(self.BORDER_COLOR[0],self.BORDER_COLOR[1],self.BORDER_COLOR[2]),
                             self.font)
             img_draw.text((textProps['x'],
                             textProps['y'] + int(textProps["lineHeight"]*(0.4+1+self.SUB_LINE_MARGIN_BOTTOM))*line_num),
-                            text.decode("utf-8"),
+                            text,
                             self.rgb2hex(self.TEXT_COLOR[0],self.TEXT_COLOR[1],self.TEXT_COLOR[2]),
                             self.font)
         if self.SHOW_TIME:
@@ -292,13 +292,14 @@ class ConvertVideoLectureToImage:
         sub = {'from':0,'to':0,'text':''}
         sign = {'new':'\n','timeFromTo':'-->'}
         subList = []
-        srt = pysrt.open(self.subPath,encoding="utf-8")
+        encoding ="utf-8" if self.UNICODE else "ascii"
+        srt = pysrt.open(self.subPath,encoding=encoding)
         subList = [{'from':self.toMilliseconds(line.start),
                     'to':self.toMilliseconds(line.end),
-                    'text':line.text} for line in srt]
+                    'text':line.text + ''} for line in srt]
         if self.COLLISION_SHIFTING_MILISECONDS>0:
             def fixSubTextCollision(self,sub):
-                for i in range(1,len(sub)):
+                for i in range(0,len(sub)):
                     if sub[i]['from']==sub[i-1]['to']:
                         sub[i]['from'] += self.COLLISION_SHIFTING_MILISECONDS
             self.fixSubTextCollision(subList)
