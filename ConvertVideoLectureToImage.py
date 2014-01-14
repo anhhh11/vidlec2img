@@ -43,7 +43,7 @@ class ConvertVideoLectureToImage:
     BORDER_COLOR = list()
 
     SHOW_MID = False
-    SHOW_END = True
+    SHOW_END = False
     SHOW_TIME = False
 
     COUNT_INCREMENT = 1
