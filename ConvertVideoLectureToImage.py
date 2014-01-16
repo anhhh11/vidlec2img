@@ -169,6 +169,7 @@ class ConvertVideoLectureToImage:
         if len(self.BORDER_COLOR)==0:
             self.BORDER_COLOR = map(lambda x: 255-x,self.TEXT_COLOR)
 
+
         if self.videoPath.startswith('http'):
             self.videoPath = GetLink.GetLink(url=self.videoPath,cookiesJsonPath=self.COOKIE_JSON_PATH).get()
             self.videoPath = self.videoPath.replace('https','http')

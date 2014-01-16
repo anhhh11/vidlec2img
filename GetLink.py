@@ -27,10 +27,11 @@ class GetLink:
             cookies = dict(map(lambda cookie: (cookie["name"],cookie["value"]),cookiesJson))
         else:
             cookies = {}
-        request = requests.head(self.url,\
+        self.request = requests.head(self.url,\
                         cookies=cookies,\
-                        allow_redirects=True)
-        return request.url
+                        allow_redirects=True,
+                        stream=True)
+        return self.request.url
 
 ##a=""""""
 ##
