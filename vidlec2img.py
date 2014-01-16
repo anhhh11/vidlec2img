@@ -160,6 +160,11 @@ def menu():
                         help="""Generate image for testing purpose(only n or 2n or 3n image based on whether or not picking image middle,end)
                                 . Default: n=%i""" % ConvertVideoLectureToImage.TEST_NUM_IMAGE,\
                         default=ConvertVideoLectureToImage.TEST_NUM_IMAGE,type=int)
+    others.add_argument('-R',"--resume",\
+                        help="""To resume currupt process ( required same video,srt,output folder,middle,start,end parameters
+                                . Default: n=%i""" % ConvertVideoLectureToImage.RESUME,\
+                        default=ConvertVideoLectureToImage.RESUME,action="store_true")
+
     return parser
 def main():
     parser = menu()
@@ -195,6 +200,8 @@ def main():
     c.COOKIE_JSON_PATH = args.cookie_json_path
 
     c.IMAGE_OUTPUT_TYPE = args.image_output_type
+
+    c.RESUME = args.resume
     start = time.clock()
     c.genImage()
     elapsed = time.clock() - start

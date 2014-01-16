@@ -66,6 +66,8 @@ class ConvertVideoLectureToImage:
 
     COOKIE_JSON_PATH = ''
 
+    RESUME = False
+
     def __init__(self,videoPath,subPath,outputPath=''):
         self.videoPath = videoPath
         self.subPath = subPath
@@ -109,20 +111,21 @@ class ConvertVideoLectureToImage:
                 else:
                     return frame
 
-    def writeFrameToImg(self,frame,filename):
+    def writeFrameToImg(self,frame,filepath):
         if self.TO_GRAYSCALE == True:
             frame = self.toGrayscale(frame)
-        if not cv2.imwrite(self.outFilePath(filename),frame):
+        if not cv2.imwrite(filepath,frame):
             raise Exception("Cannot write to output")
         return True
 
     def outFilePath(self,filename):
         return self.outputPath + '/' +filename
 
-    def name_generator(self,prefix='image'):
+    def imgPathGenerator(self,prefix='image'):
         count = 0
         while True:
-            yield '{0}-{1:05d}.{2}'.format(prefix,count,self.IMAGE_OUTPUT_TYPE)
+            filename = '{0}-{1:05d}.{2}'.format(prefix,count,self.IMAGE_OUTPUT_TYPE)
+            yield self.outFilePath(filename)
             count+=1
 
     def wrapTextUnicode(self,text):
@@ -192,11 +195,10 @@ class ConvertVideoLectureToImage:
     def genBorderPos(self,x,y):
         return [(x-i,y-j) for i in range(-self.BORDER_SIZE,self.BORDER_SIZE+1) for j in range(-self.BORDER_SIZE,self.BORDER_SIZE+1)]
 
-    def addTextUnicode(self,filename,textProps,frame,miltime):
+    def addTextUnicode(self,file_path,textProps,frame,miltime):
         #self.writeFrameToImg(frame,filename)
         if self.TO_GRAYSCALE:
             frame = self.toGrayscale(frame)
-        file_path = self.outFilePath(filename)
         image_file = Image.fromarray(frame) #open(file_path)
         img_draw = ImageDraw.Draw(image_file)
         for line_num,text in enumerate(textProps['lineList']):
@@ -229,7 +231,7 @@ class ConvertVideoLectureToImage:
         image_file.save(file_path)
         #self.writeFrameToImg(open_cv_image,filename)
 
-    def addTextAscii(self,filename,textProps,frame,miltime):
+    def addTextAscii(self,file_path,textProps,frame,miltime):
         for line_num,line in enumerate(textProps['lineList']):
             for x,y in self.genBorderPos(textProps['x'],textProps['y']):
                 cv2.putText(frame,\
@@ -271,7 +273,7 @@ class ConvertVideoLectureToImage:
                         (self.TEXT_COLOR[2],self.TEXT_COLOR[1],self.TEXT_COLOR[0]),\
                         self.THICKNESS,\
                         lineType=cv2.CV_AA)
-        self.writeFrameToImg(frame,filename)
+        self.writeFrameToImg(frame,file_path)
 
     def getTimePos(self):
         return tuple((int((1-self.TIME_MARGIN_RIGHT_PERCENT)*self.width),\
@@ -279,12 +281,14 @@ class ConvertVideoLectureToImage:
 
     def genImage(self):
         self.prepareVidAndSub()
-        name_gen = self.name_generator()
+        img_path_gen = self.imgPathGenerator()
         #test mode
         if self.TEST_NUM_IMAGE > 0:
             self.sub = self.sub[0:self.TEST_NUM_IMAGE]
+        skip = 0
 
         total_subtitle_row = len(self.sub)
+
         progress_bar = self.progressBar(total_subtitle_row*self.COUNT_INCREMENT)
 
         addText = self.addTextUnicode if self.UNICODE else self.addTextAscii
@@ -292,11 +296,20 @@ class ConvertVideoLectureToImage:
 
 
         for row_num,row in enumerate(self.sub):
+
+            progress_bar((row_num+1)*self.COUNT_INCREMENT)
+
             from_time,to_time = row['from'],row['to']
             textProps = wrapText(row['text'])
 
             #get image at from_time
-            img_file_out = name_gen.next()
+            img_file_out = img_path_gen.next()
+
+            if self.RESUME == True:
+                if path.isfile(img_file_out):
+                    skip+=1
+                    continue
+
             frame = self.readFrameAtMil(self.videoCapture,from_time)
             addText(img_file_out,textProps,frame,from_time)
             if self.SCENE_DETECTION == True:
@@ -304,7 +317,11 @@ class ConvertVideoLectureToImage:
             textProps['lineList'] = []
             #get image at mid_time
             if self.SHOW_MID == True:
-                img_file_out = name_gen.next()
+                img_file_out = img_path_gen.next()
+                if self.RESUME == True:
+                    if path.isfile(img_file_out):
+                        skip+=1
+                        continue
                 mid_time = (from_time+to_time)/2
                 frame = self.readFrameAtMil(self.videoCapture,mid_time)
                 addText(img_file_out,textProps,frame,mid_time)
@@ -312,13 +329,16 @@ class ConvertVideoLectureToImage:
 
             #get image at to_time
             if self.SHOW_END == True:
-                img_file_out = name_gen.next()
+                img_file_out = img_path_gen.next()
+                if self.RESUME == True:
+                    if path.isfile(img_file_out):
+                        skip+=1
+                        continue
                 frame = self.readFrameAtMil(self.videoCapture,to_time)
                 addText(img_file_out,textProps,frame,to_time)
                 #self.writeFrameToImg(textProps,img_file_out)
 
-            progress_bar((row_num+1)*self.COUNT_INCREMENT)
-
+        sys.stdout.write("\nSkip %d/%d image" % (skip,total_subtitle_row))
         self.videoCapture.release()
 
         print '\nDone!'
