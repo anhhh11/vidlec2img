@@ -54,7 +54,7 @@ class ConvertVideoLectureToImage:
     TIME_MARGIN_RIGHT_PERCENT = 0.2
     TIME_MARGIN_TOP_PERCENT = 0.05
 
-    IMAGE_OUTPUT_TYPE = 'png'
+    IMAGE_OUTPUT_TYPE = 'jpg'
 
     VIDEO_EXTENSION = '.mp4'
 
@@ -193,9 +193,11 @@ class ConvertVideoLectureToImage:
         return [(x-i,y-j) for i in range(-self.BORDER_SIZE,self.BORDER_SIZE+1) for j in range(-self.BORDER_SIZE,self.BORDER_SIZE+1)]
 
     def addTextUnicode(self,filename,textProps,frame,miltime):
-        self.writeFrameToImg(frame,filename)
+        #self.writeFrameToImg(frame,filename)
+        if self.TO_GRAYSCALE:
+            frame = self.toGrayscale(frame)
         file_path = self.outFilePath(filename)
-        image_file = Image.open(file_path)
+        image_file = Image.fromarray(frame) #open(file_path)
         img_draw = ImageDraw.Draw(image_file)
         for line_num,text in enumerate(textProps['lineList']):
             for x,y in self.genBorderPos(textProps['x'],textProps['y']):
@@ -221,8 +223,11 @@ class ConvertVideoLectureToImage:
                             time,
                             self.rgb2hex(self.TEXT_COLOR[0],self.TEXT_COLOR[1],self.TEXT_COLOR[2]),
                             self.font)
-
+        #open_cv_image = numpy.array(image_file)
+        # Convert RGB to BGR
+        #open_cv_image = open_cv_image[:, :, ::-1].copy()
         image_file.save(file_path)
+        #self.writeFrameToImg(open_cv_image,filename)
 
     def addTextAscii(self,filename,textProps,frame,miltime):
         for line_num,line in enumerate(textProps['lineList']):
