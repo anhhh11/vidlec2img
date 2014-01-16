@@ -18,9 +18,11 @@ import sys
 import textwrap
 import pysrt
 import tarfile
+import unicodedata
 from PIL import Image,ImageDraw,ImageFont
 from multiprocessing import Process
 from datetime import timedelta
+import GetLink
 class ConvertVideoLectureToImage:
     SUBTITLE_EXT = '.srt'
     SUB_MARGIN_LEFT_PERCENT  = 0.1
@@ -54,7 +56,7 @@ class ConvertVideoLectureToImage:
 
     IMAGE_OUTPUT_TYPE = 'png'
 
-    VIDEO_EXTENSION = 'mp4'
+    VIDEO_EXTENSION = '.mp4'
 
     TO_TAR  = False
     TAR_PATH = ''
@@ -62,6 +64,7 @@ class ConvertVideoLectureToImage:
     SCENE_DETECTION = False
     SCENE_THREADHOLD = 10
 
+    COOKIE_JSON_PATH = ''
 
     def __init__(self,videoPath,subPath,outputPath=''):
         self.videoPath = videoPath
@@ -77,19 +80,21 @@ class ConvertVideoLectureToImage:
         else:
             self.outputPath = outputPath
 
-        if videoPath == '':
-            def getSubFileNameWithoutExt(subPath):
+        def getSubFileNameWithoutExt(subPath):
                 return subPath.split('.')[0]
+
+        if videoPath == '':
             subFilenameWithoutExt = getSubFileNameWithoutExt(subPath)
             self.videoPath = subFilenameWithoutExt + self.VIDEO_EXTENSION
 
-            if self.TO_TAR == True:
-                if self.TAR_PATH=='':
-                    self.tarPath = tarfile.open(subFilenameWithoutExt + '.tar','w')
-                else:
-                    self.tarPath = tarfile.open(self.TAR_PATH)
-            if not path.exists(self.subPath):
-                raise Exception("Cannot find subtitle file name " + self.subPath)
+        if self.TO_TAR == True:
+            if self.TAR_PATH=='':
+                self.tarPath = tarfile.open(subFilenameWithoutExt + '.tar','w')
+            else:
+                self.tarPath = tarfile.open(self.TAR_PATH)
+
+        if not path.exists(self.subPath):
+            raise Exception("Cannot find subtitle file name " + self.subPath)
 
 
     @staticmethod
@@ -137,6 +142,7 @@ class ConvertVideoLectureToImage:
         return {'lineList':line_list,'x':pos_x,'y':pos_y,'lineHeight':text_height}
 
     def wrapTextAscii(self,text):
+        text = text.encode("ascii","ignore")
         text_width,text_height = cv2.getTextSize(text,self.FONT_FACE,self.FONTSCALE,self.THICKNESS)[0] # width,height
         content_width = self.width*(1 - self.SUB_MARGIN_LEFT_PERCENT - self.SUB_MARGIN_RIGHT_PERCENT)
         if text_width > content_width:
@@ -154,9 +160,16 @@ class ConvertVideoLectureToImage:
 
     def prepareVidAndSub(self):
         if self.SHOW_MID: self.COUNT_INCREMENT+=1
+
         if self.SHOW_END: self.COUNT_INCREMENT+=1
+
         if len(self.BORDER_COLOR)==0:
             self.BORDER_COLOR = map(lambda x: 255-x,self.TEXT_COLOR)
+
+        if self.videoPath.startswith('http'):
+            self.videoPath = GetLink.GetLink(url=self.videoPath,cookiesJsonPath=self.COOKIE_JSON_PATH).get()
+            self.videoPath = self.videoPath.replace('https','http')
+            ##print self.videoPath
 
         self.sub = self.readSubtitle()
         #font prepare
@@ -310,11 +323,11 @@ class ConvertVideoLectureToImage:
         sub = {'from':0,'to':0,'text':''}
         sign = {'new':'\n','timeFromTo':'-->'}
         subList = []
-        encoding ="utf-8" if self.UNICODE else "ascii"
-        srt = pysrt.open(self.subPath,encoding=encoding)
+        ###encoding ="utf-8" if self.UNICODE else "ascii"
+        srt = pysrt.open(self.subPath,encoding="utf-8")
         subList = [{'from':self.toMilliseconds(line.start),
                     'to':self.toMilliseconds(line.end),
-                    'text':line.text + ''} for line in srt]
+                    'text':u'' + line.text} for line in srt]
         if self.COLLISION_SHIFTING_MILISECONDS>0:
             def fixSubTextCollision(self,sub):
                 for i in range(0,len(sub)):

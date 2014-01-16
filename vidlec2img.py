@@ -61,6 +61,10 @@ def menu():
     general.add_argument("-tfp","--tar-file-path",\
                         help="Path to tar file\n Default: {0}".format(ConvertVideoLectureToImage.TAR_PATH),\
                         default=ConvertVideoLectureToImage.TAR_PATH)
+    general.add_argument("-cjp","--cookie-json-path",\
+                        help="Path to cookie's file which exported from Edit This Cookie extension of Google Chrome\n Default: {0}"
+                                            .format(ConvertVideoLectureToImage.COOKIE_JSON_PATH),
+                                                    default=ConvertVideoLectureToImage.COOKIE_JSON_PATH)
     #unicode mode
     unicode_mode = parser.add_argument_group('Unicode mode'.upper())
     unicode_mode.add_argument('-U',"--unicode-mode",\
@@ -173,6 +177,7 @@ def main():
     c.FONT_PATH = args.font_path
     c.BORDER_COLOR = args.border_color
     c.BORDER_SIZE = args.border_size
+
     c.SUB_MARGIN_LEFT_PERCENT,c.SUB_MARGIN_RIGHT_PERCENT,c.SUB_MARGIN_BOTTOM_PERCENT=\
         args.subtitle_margin_percent
 
@@ -186,6 +191,8 @@ def main():
 
     c.TIME_MARGIN_RIGHT_PERCENT = args.time_margin_right_percent
     c.TIME_MARGIN_TOP_PERCENT = args.time_margin_top_percent
+
+    c.COOKIE_JSON_PATH = args.cookie_json_path
 
     c.IMAGE_OUTPUT_TYPE = args.image_output_type
     start = time.clock()

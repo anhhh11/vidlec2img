@@ -1,7 +1,7 @@
 *.py[cod]
 *.tar.gz
 *.zip
-
+cookies.json
 # C extensions
 *.so
 
