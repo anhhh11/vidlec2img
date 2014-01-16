@@ -38,8 +38,8 @@ def menu():
     parser = argparse.ArgumentParser(description='Convert video lecture to image')
     #general
     general = parser.add_argument_group('Input/Output'.upper())
-    general.add_argument('-vp','--video-file-path',help="Path to video file",required=True)
-    general.add_argument('-sp','--sub-file-path',help="Path to subtitle file",default='')
+    general.add_argument('-vp','--video-file-path',help="Path to video file",default='')
+    general.add_argument('-sp','--sub-file-path',help="Path to subtitle file",required=True)
     general.add_argument('-sc',"--subtitle-color",help="Subtitle color R G B, value=0..255\n Default: %s" % str(ConvertVideoLectureToImage.TEXT_COLOR)\
                         ,type=int,nargs=3,required=False,metavar=('R','G','B'),default=ConvertVideoLectureToImage.TEXT_COLOR)
     general.add_argument("-G","--to-grayscale",\
@@ -54,6 +54,13 @@ def menu():
     general.add_argument('-o',"--output-path",\
                         help="Output images path. Default: <video_file_name_folder>",\
                         default='')
+    general.add_argument("-T","--to-tar",\
+                        help="Store images to tar file\n Default: {0}".format(ConvertVideoLectureToImage.TO_TAR),\
+                        default=ConvertVideoLectureToImage.TO_TAR,
+                        action="store_true")
+    general.add_argument("-tfp","--tar-file-path",\
+                        help="Path to tar file\n Default: {0}".format(ConvertVideoLectureToImage.TAR_PATH),\
+                        default=ConvertVideoLectureToImage.TAR_PATH)
     #unicode mode
     unicode_mode = parser.add_argument_group('Unicode mode'.upper())
     unicode_mode.add_argument('-U',"--unicode-mode",\

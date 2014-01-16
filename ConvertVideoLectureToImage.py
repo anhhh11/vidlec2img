@@ -17,6 +17,7 @@ import os.path
 import sys
 import textwrap
 import pysrt
+import tarfile
 from PIL import Image,ImageDraw,ImageFont
 from multiprocessing import Process
 from datetime import timedelta
@@ -53,11 +54,21 @@ class ConvertVideoLectureToImage:
 
     IMAGE_OUTPUT_TYPE = 'png'
 
-    def __init__(self,videoPath,subPath=r'',outputPath=''):
+    VIDEO_EXTENSION = 'mp4'
+
+    TO_TAR  = False
+    TAR_PATH = ''
+
+    SCENE_DETECTION = False
+    SCENE_THREADHOLD = 10
+
+
+    def __init__(self,videoPath,subPath,outputPath=''):
         self.videoPath = videoPath
-        self.subPath = r''
+        self.subPath = subPath
+        self.tarPath = None
         if outputPath == '':
-            self.outputPath = videoPath.split('.')[0] + '/'
+            self.outputPath = subPath.split('.')[0] + '/'
             if not path.isdir(self.outputPath):
                 try:
                     os.mkdir(self.outputPath)
@@ -66,14 +77,19 @@ class ConvertVideoLectureToImage:
         else:
             self.outputPath = outputPath
 
-        if subPath == '':
-            def getSubPathFromVideoPath(videoPath):
-                return videoPath.split('.')[0] + self.SUBTITLE_EXT
-            self.subPath = getSubPathFromVideoPath(videoPath)
+        if videoPath == '':
+            def getSubFileNameWithoutExt(subPath):
+                return subPath.split('.')[0]
+            subFilenameWithoutExt = getSubFileNameWithoutExt(subPath)
+            self.videoPath = subFilenameWithoutExt + self.VIDEO_EXTENSION
+
+            if self.TO_TAR == True:
+                if self.TAR_PATH=='':
+                    self.tarPath = tarfile.open(subFilenameWithoutExt + '.tar','w')
+                else:
+                    self.tarPath = tarfile.open(self.TAR_PATH)
             if not path.exists(self.subPath):
                 raise Exception("Cannot find subtitle file name " + self.subPath)
-        else:
-            self.subPath = subPath
 
 
     @staticmethod
@@ -265,7 +281,8 @@ class ConvertVideoLectureToImage:
             img_file_out = name_gen.next()
             frame = self.readFrameAtMil(self.videoCapture,from_time)
             addText(img_file_out,textProps,frame,from_time)
-
+            if self.SCENE_DETECTION == True:
+                pass
             textProps['lineList'] = []
             #get image at mid_time
             if self.SHOW_MID == True:
@@ -285,6 +302,7 @@ class ConvertVideoLectureToImage:
             progress_bar((row_num+1)*self.COUNT_INCREMENT)
 
         self.videoCapture.release()
+
         print '\nDone!'
 
 
