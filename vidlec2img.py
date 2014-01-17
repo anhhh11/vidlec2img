@@ -156,6 +156,14 @@ def menu():
                         help="Avoid the instance which the next image have same subtitle with current one\n Default: {0}"\
                             .format(ConvertVideoLectureToImage.COLLISION_SHIFTING_MILISECONDS),\
                             default=ConvertVideoLectureToImage.COLLISION_SHIFTING_MILISECONDS)
+    others.add_argument('-cljpg',"--compress-level-jpg",\
+                        help="Compress level for JPG | JPEG output images, Value range: [0-100]\n Default: {0}"\
+                            .format(ConvertVideoLectureToImage.COMPRESS_LEVEL_JPG),\
+                            default=ConvertVideoLectureToImage.COMPRESS_LEVEL_JPG,type=int)
+    others.add_argument('-clpng',"--compress-level-png",\
+                        help="Compress level for PNG output images, Value range: [0-9]\n Default: {0}"\
+                            .format(ConvertVideoLectureToImage.COMPRESS_LEVEL_PNG),\
+                            default=ConvertVideoLectureToImage.COMPRESS_LEVEL_PNG,type=int)
     others.add_argument('-t',"--test",\
                         help="""Generate image for testing purpose(only n or 2n or 3n image based on whether or not picking image middle,end)
                                 . Default: n=%i""" % ConvertVideoLectureToImage.TEST_NUM_IMAGE,\
@@ -202,6 +210,10 @@ def main():
     c.IMAGE_OUTPUT_TYPE = args.image_output_type
 
     c.RESUME = args.resume
+
+    c.COMPRESS_LEVEL_JPG = args.compress_level_jpg
+    c.COMPRESS_LEVEL_PNG = args.compress_level_png
+
     start = time.clock()
     c.genImage()
     elapsed = time.clock() - start

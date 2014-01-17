@@ -68,9 +68,13 @@ class ConvertVideoLectureToImage:
 
     RESUME = False
 
+    COMPRESS_LEVEL_JPG = 15
+    COMPRESS_LEVEL_PNG = 100
+
     def __init__(self,videoPath,subPath,outputPath=''):
         self.videoPath = videoPath
         self.subPath = subPath
+        self.compressParams = []
         self.tarPath = None
         if outputPath == '':
             self.outputPath = subPath.split('.')[0] + '/'
@@ -114,7 +118,9 @@ class ConvertVideoLectureToImage:
     def writeFrameToImg(self,frame,filepath):
         if self.TO_GRAYSCALE == True:
             frame = self.toGrayscale(frame)
-        if not cv2.imwrite(filepath,frame):
+
+        if not cv2.imwrite(filepath,frame,self.compressParams):
+
             raise Exception("Cannot write to output")
         return True
 
@@ -169,6 +175,10 @@ class ConvertVideoLectureToImage:
         if len(self.BORDER_COLOR)==0:
             self.BORDER_COLOR = map(lambda x: 255-x,self.TEXT_COLOR)
 
+        if  self.IMAGE_OUTPUT_TYPE in ('jpg','jpeg'):
+            self.compressParams = [cv2.cv.CV_IMWRITE_JPEG_QUALITY,self.COMPRESS_LEVEL_JPG,0]
+        elif self.IMAGE_OUTPUT_TYPE == 'png':
+            self.compressParams = [cv2.cv.CV_IMWRITE_PNG_COMPRESSION,self.COMPRESS_LEVEL_PNG,0]
 
         if self.videoPath.startswith('http'):
             self.videoPath = GetLink.GetLink(url=self.videoPath,cookiesJsonPath=self.COOKIE_JSON_PATH).get()
