@@ -34,9 +34,9 @@ class ConvertVideoLectureToImage:
     TEST_NUM_IMAGE = 0
     UNICODE = False
     #ascii mode
-    FONT_FACE = "FONT_HERSHEY_PLAIN"
+    FONT_FACE = "FONT_HERSHEY_SIMPLEX"
     TEXT_COLOR = [255,255,255] # (R, G, B)
-    FONTSCALE = 1.5
+    FONTSCALE = 0.7
     THICKNESS = 1
     #unicode mode
     FONT_PATH = ''
