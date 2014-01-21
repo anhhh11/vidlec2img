@@ -68,8 +68,12 @@ class ConvertVideoLectureToImage:
 
     RESUME = False
 
-    COMPRESS_LEVEL_JPG = 15
+    COMPRESS_LEVEL_JPG = 50
     COMPRESS_LEVEL_PNG = 100
+
+    IMAGE_OUTPUT_WIDTH = 800
+    IMAGE_OUTPUT_HEIGHT = 0
+    IS_RESIZE = False
 
     def __init__(self,videoPath,subPath,outputPath=''):
         self.videoPath = videoPath
@@ -103,8 +107,7 @@ class ConvertVideoLectureToImage:
             raise Exception("Cannot find subtitle file name " + self.subPath)
 
 
-    @staticmethod
-    def readFrameAtMil(videoCapture,mil):
+    def readFrameAtMil(self,videoCapture,mil):
             while True:
                 pos_frame = videoCapture.get(cv.CV_CAP_PROP_POS_FRAMES)
                 flag,frame = videoCapture.read()
@@ -113,12 +116,9 @@ class ConvertVideoLectureToImage:
                     print "frame is not ready"
                     cv2.WaitKey(1000)
                 else:
-                    return frame
+                    return self.preprocessFrame(frame)
 
     def writeFrameToImg(self,frame,filepath):
-        if self.TO_GRAYSCALE == True:
-            frame = self.toGrayscale(frame)
-
         if not cv2.imwrite(filepath,frame,self.compressParams):
 
             raise Exception("Cannot write to output")
@@ -198,6 +198,15 @@ class ConvertVideoLectureToImage:
             raise Exception("Cannot open video file")
         self.width = int(self.videoCapture.get(cv.CV_CAP_PROP_FRAME_WIDTH))
         self.height = int(self.videoCapture.get(cv.CV_CAP_PROP_FRAME_HEIGHT))
+        if self.IS_RESIZE:
+            self.orginal_width = self.width
+            self.orginal_height = self.height
+            newHeightDependOnWidth = int(self.IMAGE_OUTPUT_WIDTH*self.orginal_height/float(self.orginal_width))
+            if newHeightDependOnWidth < self.IMAGE_OUTPUT_HEIGHT:
+                self.height = self.IMAGE_OUTPUT_HEIGHT
+            else:
+                self.height = newHeightDependOnWidth
+            self.width = self.IMAGE_OUTPUT_WIDTH
 
     def toGrayscale(self,frame):
         new_frame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
@@ -206,10 +215,14 @@ class ConvertVideoLectureToImage:
     def genBorderPos(self,x,y):
         return [(x-i,y-j) for i in range(-self.BORDER_SIZE,self.BORDER_SIZE+1) for j in range(-self.BORDER_SIZE,self.BORDER_SIZE+1)]
 
-    def addTextUnicode(self,file_path,textProps,frame,miltime):
-        #self.writeFrameToImg(frame,filename)
-        if self.TO_GRAYSCALE:
+    def preprocessFrame(self,frame):
+        if self.IS_RESIZE:
+            frame = cv2.resize(frame,(self.width,self.height))
+        if self.TO_GRAYSCALE == True:
             frame = self.toGrayscale(frame)
+        return frame
+
+    def addTextUnicode(self,file_path,textProps,frame,miltime):
         image_file = Image.fromarray(frame) #open(file_path)
         img_draw = ImageDraw.Draw(image_file)
         for line_num,text in enumerate(textProps['lineList']):
@@ -236,11 +249,11 @@ class ConvertVideoLectureToImage:
                             time,
                             self.rgb2hex(self.TEXT_COLOR[0],self.TEXT_COLOR[1],self.TEXT_COLOR[2]),
                             self.font)
-        #open_cv_image = numpy.array(image_file)
         # Convert RGB to BGR
+        open_cv_image = numpy.array(image_file)
         #open_cv_image = open_cv_image[:, :, ::-1].copy()
-        image_file.save(file_path)
-        #self.writeFrameToImg(open_cv_image,filename)
+        #image_file.save(file_path)
+        self.writeFrameToImg(open_cv_image,file_path)
 
     def addTextAscii(self,file_path,textProps,frame,miltime):
         for line_num,line in enumerate(textProps['lineList']):

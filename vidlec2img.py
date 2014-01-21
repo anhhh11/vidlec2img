@@ -54,6 +54,16 @@ def menu():
     general.add_argument('-o',"--output-path",\
                         help="Output images path. Default: <video_file_name_folder>",\
                         default='')
+    general.add_argument('-RSZ',"--enable-resize-output-image",\
+                        help="Output images. Default: {0}".format(ConvertVideoLectureToImage.IS_RESIZE),\
+                        default=ConvertVideoLectureToImage.IS_RESIZE,
+                        action="store_true")
+    general.add_argument('-iow',"--image-output-width",\
+                        help="Output width of images. Default: {0}".format(ConvertVideoLectureToImage.IMAGE_OUTPUT_WIDTH),\
+                        default=ConvertVideoLectureToImage.IMAGE_OUTPUT_WIDTH)
+    general.add_argument('-ioh',"--image-output-height",\
+                        help="Output height of images. If set to 0 mean height scaled based on width. Default: {0}".format(ConvertVideoLectureToImage.IMAGE_OUTPUT_HEIGHT),\
+                        default=ConvertVideoLectureToImage.IMAGE_OUTPUT_HEIGHT)
     general.add_argument("-T","--to-tar",\
                         help="Store images to tar file\n Default: {0}".format(ConvertVideoLectureToImage.TO_TAR),\
                         default=ConvertVideoLectureToImage.TO_TAR,
@@ -213,6 +223,11 @@ def main():
 
     c.COMPRESS_LEVEL_JPG = args.compress_level_jpg
     c.COMPRESS_LEVEL_PNG = args.compress_level_png
+
+
+    c.IMAGE_OUTPUT_WIDTH = args.image_output_width
+    c.IMAGE_OUTPUT_HEIGHT = args.image_output_height
+    c.IS_RESIZE = args.enable_resize_output_image
 
     start = time.clock()
     c.genImage()
