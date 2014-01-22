@@ -34,8 +34,14 @@ from ConvertVideoLectureToImage import *
 import argparse
 import time
 import datetime
+import glob
 def menu():
     parser = argparse.ArgumentParser(description='Convert video lecture to image')
+    #mass converter mode
+    mass_convert = parser.add_argument_group('Mass mode converter'.upper())
+    mass_convert.add_argument('-MM','--mass-mode',help="Enable mass mode",default=False,action="store_true")
+    mass_convert.add_argument('-fip','--folder-input-path',help="Folder input path",default="")
+
     #general
     general = parser.add_argument_group('Input/Output'.upper())
     general.add_argument('-vp','--video-file-path',help="Path to video file",default='')
@@ -67,6 +73,10 @@ def menu():
     general.add_argument("-T","--to-tar",\
                         help="Store images to tar file\n Default: {0}".format(ConvertVideoLectureToImage.TO_TAR),\
                         default=ConvertVideoLectureToImage.TO_TAR,
+                        action="store_true")
+    general.add_argument("-RM","--remove-output-images",\
+                        help="Remove output images. Usually used combine with tar -T flag\n Default: {0}".format(ConvertVideoLectureToImage.REMOVE_OUTPUT_IMG),\
+                        default=ConvertVideoLectureToImage.REMOVE_OUTPUT_IMG,
                         action="store_true")
     general.add_argument("-tfp","--tar-file-path",\
                         help="Path to tar file\n Default: {0}".format(ConvertVideoLectureToImage.TAR_PATH),\
@@ -208,6 +218,8 @@ def main():
 
     c.TEST_NUM_IMAGE = args.test
 
+    c.TO_TAR = args.to_tar
+
     c.SHOW_END = args.get_end_image
     c.SHOW_MID = args.get_middle_image
     c.SHOW_TIME = args.show_time
@@ -224,6 +236,7 @@ def main():
     c.COMPRESS_LEVEL_JPG = args.compress_level_jpg
     c.COMPRESS_LEVEL_PNG = args.compress_level_png
 
+    c.REMOVE_OUTPUT_IMG = args.remove_output_images
 
     c.IMAGE_OUTPUT_WIDTH = args.image_output_width
     c.IMAGE_OUTPUT_HEIGHT = args.image_output_height

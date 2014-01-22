@@ -19,6 +19,7 @@ import textwrap
 import pysrt
 import tarfile
 import unicodedata
+import shutil
 from PIL import Image,ImageDraw,ImageFont
 from multiprocessing import Process
 from datetime import timedelta
@@ -75,20 +76,22 @@ class ConvertVideoLectureToImage:
     IMAGE_OUTPUT_HEIGHT = 0
     IS_RESIZE = False
 
+    REMOVE_OUTPUT_IMG = False
+
     def __init__(self,videoPath,subPath,outputPath=''):
         self.videoPath = videoPath
         self.subPath = subPath
         self.compressParams = []
         self.tarPath = None
         if outputPath == '':
-            self.outputPath = subPath.split('.')[0] + '/'
-            if not path.isdir(self.outputPath):
-                try:
-                    os.mkdir(self.outputPath)
-                except:
-                    os.mkdir(self.outputPath + '_')
+            self.outputPath = subPath.split('.')[0]
         else:
-            self.outputPath = outputPath
+            self.outputPath = self.outputPath + '/' + path.basename(self.subPath).split('.')[0]
+        if not path.isdir(self.outputPath):
+            try:
+                os.mkdir(self.outputPath)
+            except:
+                os.mkdir(self.outputPath + '_')
 
         def getSubFileNameWithoutExt(subPath):
                 return subPath.split('.')[0]
@@ -97,11 +100,6 @@ class ConvertVideoLectureToImage:
             subFilenameWithoutExt = getSubFileNameWithoutExt(subPath)
             self.videoPath = subFilenameWithoutExt + self.VIDEO_EXTENSION
 
-        if self.TO_TAR == True:
-            if self.TAR_PATH=='':
-                self.tarPath = tarfile.open(subFilenameWithoutExt + '.tar','w')
-            else:
-                self.tarPath = tarfile.open(self.TAR_PATH)
 
         if not path.exists(self.subPath):
             raise Exception("Cannot find subtitle file name " + self.subPath)
@@ -120,8 +118,9 @@ class ConvertVideoLectureToImage:
 
     def writeFrameToImg(self,frame,filepath):
         if not cv2.imwrite(filepath,frame,self.compressParams):
-
             raise Exception("Cannot write to output")
+        if self.TO_TAR==True:
+            self.tarFile.add(filepath,arcname=path.basename(filepath))
         return True
 
     def outFilePath(self,filename):
@@ -184,6 +183,15 @@ class ConvertVideoLectureToImage:
             self.videoPath = GetLink.GetLink(url=self.videoPath,cookiesJsonPath=self.COOKIE_JSON_PATH).get()
             self.videoPath = self.videoPath.replace('https','http')
             ##print self.videoPath
+
+        if self.TO_TAR == True:
+            if self.TAR_PATH=='':
+                self.tarPath = self.outputPath + '.tar'
+            else:
+                self.tarPath = self.TAR_PATH + path.basename(self.subPath).split('.')[0] + '.tar'
+            mode = 'w'
+            #'a' if path.exists(self.tarPath) else
+            self.tarFile = tarfile.open(self.tarPath,mode)
 
         self.sub = self.readSubtitle()
         #font prepare
@@ -364,6 +372,12 @@ class ConvertVideoLectureToImage:
 
         sys.stdout.write("\nSkip %d/%d image" % (skip,total_subtitle_row))
         self.videoCapture.release()
+
+        if self.TO_TAR:
+            self.tarFile.close()
+
+        if self.REMOVE_OUTPUT_IMG:
+            shutil.rmtree(self.outputPath)
 
         print '\nDone!'
 
