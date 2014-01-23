@@ -66,10 +66,10 @@ def menu():
                         action="store_true")
     general.add_argument('-iow',"--image-output-width",\
                         help="Output width of images. Default: {0}".format(ConvertVideoLectureToImage.IMAGE_OUTPUT_WIDTH),\
-                        default=ConvertVideoLectureToImage.IMAGE_OUTPUT_WIDTH)
+                        default=ConvertVideoLectureToImage.IMAGE_OUTPUT_WIDTH,type=int)
     general.add_argument('-ioh',"--image-output-height",\
                         help="Output height of images. If set to 0 mean height scaled based on width. Default: {0}".format(ConvertVideoLectureToImage.IMAGE_OUTPUT_HEIGHT),\
-                        default=ConvertVideoLectureToImage.IMAGE_OUTPUT_HEIGHT)
+                        default=ConvertVideoLectureToImage.IMAGE_OUTPUT_HEIGHT,type=int)
     general.add_argument("-T","--to-tar",\
                         help="Store images to tar file\n Default: {0}".format(ConvertVideoLectureToImage.TO_TAR),\
                         default=ConvertVideoLectureToImage.TO_TAR,
@@ -129,6 +129,12 @@ def menu():
                                         ConvertVideoLectureToImage.SUB_MARGIN_BOTTOM_PERCENT,\
                                         )
                             )
+    appearance.add_argument('-lbm',"--line-bottom-margin-in-percent",\
+                        help="\nLine bottom margin in percent of line height Default: {0}".format(ConvertVideoLectureToImage.SUB_LINE_MARGIN_BOTTOM),\
+                        default=ConvertVideoLectureToImage.SUB_LINE_MARGIN_BOTTOM,\
+                        metavar=("BOTTOM_MARGIN"),
+                        type=float)
+
     appearance.add_argument('-bsz',"--border-size",\
                         help="Text border size\n Default: {0}".format(ConvertVideoLectureToImage.BORDER_SIZE),\
                         default=ConvertVideoLectureToImage.BORDER_SIZE,\
@@ -213,7 +219,7 @@ def main():
 
     c.SUB_MARGIN_LEFT_PERCENT,c.SUB_MARGIN_RIGHT_PERCENT,c.SUB_MARGIN_BOTTOM_PERCENT=\
         args.subtitle_margin_percent
-
+    c.SUB_LINE_MARGIN_BOTTOM = args.line_bottom_margin_in_percent
     c.COLLISION_SHIFTING_MILISECONDS = args.collision_shifting_time
 
     c.TEST_NUM_IMAGE = args.test
@@ -226,6 +232,7 @@ def main():
 
     c.TIME_MARGIN_RIGHT_PERCENT = args.time_margin_right_percent
     c.TIME_MARGIN_TOP_PERCENT = args.time_margin_top_percent
+
 
     c.COOKIE_JSON_PATH = args.cookie_json_path
 
@@ -243,7 +250,7 @@ def main():
     c.IS_RESIZE = args.enable_resize_output_image
 
     start = time.clock()
-    c.genImage()
+    c.gen_image()
     elapsed = time.clock() - start
     sys.stdout.write("\nElapsed time: %s" % datetime.timedelta(seconds=elapsed))
 if __name__ == '__main__':
