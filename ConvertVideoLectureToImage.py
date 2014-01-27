@@ -80,7 +80,7 @@ class ConvertVideoLectureToImage:
 
     REMOVE_OUTPUT_IMG = False
 
-    DIFF_THRESHOLD = 1000
+    DIFF_THRESHOLD = 5500
     AVOID_DUPLICATE_MID_END_IMAGE = True
 
 
@@ -132,12 +132,16 @@ class ConvertVideoLectureToImage:
     def out_file_path(self, filename):
         return self.outputPath + '/' + filename
 
-    def img_path_generator(self, prefix='image'):
+    def img_path_generator(self, prefix='image',increaseBy=1):
         count = 0
         while True:
             filename = '{0}-{1:05d}.{2}'.format(prefix, count, self.IMAGE_OUTPUT_TYPE)
-            yield self.out_file_path(filename)
-            count += 1
+            nextFileName = '{0}-{1:05d}.{2}'.format(prefix, count+1, self.IMAGE_OUTPUT_TYPE)
+            yield [filename,nextFileName]
+            count += increaseBy
+
+    def img_name_by_number(self,prefix,number):
+        return '{0}-{1:05d}.{2}'.format(prefix, number, self.IMAGE_OUTPUT_TYPE)
 
     def wrap_text_unicode(self, text):
         """
@@ -395,9 +399,9 @@ class ConvertVideoLectureToImage:
             text_props = wrap_text(row['text'])
 
             #get image at from_time
-            img_file_out = img_path_gen.next()
+            img_file_out = map(self.out_file_path,img_path_gen.next())
             #start image with subtitle
-            if True == self.RESUME and path.isfile(img_file_out):
+            if True == self.RESUME and path.isfile(img_file_out[0]):
                 skip += 1
                 continue
             else:
@@ -407,12 +411,12 @@ class ConvertVideoLectureToImage:
             org_frame = numpy.empty_like(frame)
             if self.SHOW_MID or self.SHOW_END:
                 numpy.copyto(org_frame,frame)
-            add_text(img_file_out, text_props, frame, from_time)
+            add_text(img_file_out[0], text_props, frame, from_time)
             text_props['lineList'] = []
             #get image at mid_time
             mid_frame = None
             if self.SHOW_MID:
-                if self.RESUME and path.isfile(img_file_out):
+                if self.RESUME and path.isfile(img_file_out[1]):
                     skip += 1
                 else:
                     mid_time = (from_time + to_time) / 2
@@ -420,23 +424,23 @@ class ConvertVideoLectureToImage:
                     if self.AVOID_DUPLICATE_MID_END_IMAGE and self.is_difference(org_frame,mid_frame):
                         count+=1
                         ##print "Diff {0}".format(cv2.norm(org_frame,mid_frame))
-                        img_file_out = img_path_gen.next()
-                        add_text(img_file_out, text_props, mid_frame, mid_time)
+                        img_file_out = map(self.out_file_path,img_path_gen.next())
+                        add_text(img_file_out[0], text_props, mid_frame, mid_time)
                     else:
                         estimated_row -= 1
                 #self.writeFrameToImg(frame,img_file_out)
 
             #get image at to_time
             if self.SHOW_END:
-                if self.RESUME and path.isfile(img_file_out):
+                if self.RESUME and path.isfile(img_file_out[1]):
                     skip += 1
                 else:
                     end_frame = self.read_frame_at_mil(self.video_capture, to_time)
                     if (mid_frame is not None and self.is_difference(mid_frame,end_frame)) or \
                             (mid_frame is None and self.is_difference(org_frame,end_frame)):
                         count += 1
-                        img_file_out = img_path_gen.next()
-                        add_text(img_file_out, text_props, end_frame, to_time)
+                        img_file_out = map(self.out_file_path,img_path_gen.next())
+                        add_text(img_file_out[0], text_props, end_frame, to_time)
                     else:
                         estimated_row -= 1
                     #self.writeFrameToImg(text_props,img_file_out)

@@ -289,7 +289,7 @@ def main():
             cookies = []
             if args.cookie_json_path:
                 cookies = open(args.cookie_json_path,'r').read()
-            for row in rowList:
+            for row in filter(lambda x: x[0],rowList):
                 subTempFile = tempfile.NamedTemporaryFile('w',delete=False)
                 subTitleContent = GetLink(row[0],cookies).getContent()
                 subTempFile.write(subTitleContent)
