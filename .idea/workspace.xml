@@ -2,12 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e7497899-56d5-476a-b1eb-f11a2cf6356e" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ConvertVideoLectureToImage.py" afterPath="$PROJECT_DIR$/ConvertVideoLectureToImage.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GetLink.py" afterPath="$PROJECT_DIR$/GetLink.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/LICENSE" afterPath="$PROJECT_DIR$/LICENSE" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vidlec2img.py" afterPath="$PROJECT_DIR$/vidlec2img.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="video_lecture_to_img.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -30,10 +26,10 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="vidlec2img.py" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="vidlec2img.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/vidlec2img.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="309" column="26" selection-start="18045" selection-end="18045" vertical-scroll-proportion="0.0" vertical-offset="4345" max-vertical-offset="4740">
+            <state line="27" column="0" selection-start="1169" selection-end="1169" vertical-scroll-proportion="0.07594936" vertical-offset="375" max-vertical-offset="4740">
               <folding>
                 <element signature="e#1415#1452#0" expanded="true" />
               </folding>
@@ -68,11 +64,13 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ConvertVideoLectureToImage.py" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="ConvertVideoLectureToImage.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ConvertVideoLectureToImage.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="446" column="55" selection-start="17501" selection-end="17501" vertical-scroll-proportion="9.235443" vertical-offset="2757" max-vertical-offset="7320">
-              <folding />
+            <state line="446" column="28" selection-start="17474" selection-end="17474" vertical-scroll-proportion="0.0" vertical-offset="6507" max-vertical-offset="7605">
+              <folding>
+                <element signature="e#289#330#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -413,7 +411,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-2" y="0" width="1370" height="745" extended-state="7" />
+    <frame x="-2" y="0" width="1370" height="745" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3283582" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -492,7 +490,9 @@
     <entry file="file://$PROJECT_DIR$/ConvertVideoLectureToImage.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="415" column="26" selection-start="15833" selection-end="15833" vertical-scroll-proportion="0.0" vertical-offset="6000" max-vertical-offset="7650">
-          <folding />
+          <folding>
+            <element signature="e#289#330#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -515,7 +515,9 @@
     <entry file="file://$PROJECT_DIR$/ConvertVideoLectureToImage.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="28" column="6" selection-start="550" selection-end="550" vertical-scroll-proportion="0.0" vertical-offset="228" max-vertical-offset="7365">
-          <folding />
+          <folding>
+            <element signature="e#289#330#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -531,7 +533,9 @@
     <entry file="file://$PROJECT_DIR$/ConvertVideoLectureToImage.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="273" column="40" selection-start="10610" selection-end="10610" vertical-scroll-proportion="0.0" vertical-offset="3795" max-vertical-offset="6435">
-          <folding />
+          <folding>
+            <element signature="e#289#330#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -563,15 +567,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/vidlec2img.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="309" column="26" selection-start="18045" selection-end="18045" vertical-scroll-proportion="0.0" vertical-offset="4345" max-vertical-offset="4740">
-          <folding>
-            <element signature="e#1415#1452#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/pydevd.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="1154" column="31" selection-start="47926" selection-end="47926" vertical-scroll-proportion="0.0" vertical-offset="16033" max-vertical-offset="22080">
@@ -581,8 +576,19 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ConvertVideoLectureToImage.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="446" column="55" selection-start="17501" selection-end="17501" vertical-scroll-proportion="9.235443" vertical-offset="2757" max-vertical-offset="7320">
-          <folding />
+        <state line="446" column="28" selection-start="17474" selection-end="17474" vertical-scroll-proportion="0.0" vertical-offset="6507" max-vertical-offset="7605">
+          <folding>
+            <element signature="e#289#330#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vidlec2img.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="27" column="0" selection-start="1169" selection-end="1169" vertical-scroll-proportion="0.07594936" vertical-offset="375" max-vertical-offset="4740">
+          <folding>
+            <element signature="e#1415#1452#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

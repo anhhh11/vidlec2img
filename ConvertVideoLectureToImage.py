@@ -444,7 +444,7 @@ class ConvertVideoLectureToImage:
         if not self.RESUME:
             print("\nSkip %d/%d subtitle row" % (skip, estimated_row))
         else:
-            print("\nSkip %d/%d subtitle row" % (skip))
+            print("\nSkip %d subtitle row" % (skip))
         self.video_capture.release()
 
         if self.TO_TAR:
