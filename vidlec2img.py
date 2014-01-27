@@ -30,22 +30,32 @@
 #http://stackoverflow.com/questions/18974194/text-shadow-with-python
 #show time idea
 #http://www.frisnit.com/2011/07/07/iplayer-for-kindle/
+from _testcapi import raise_exception
 from ConvertVideoLectureToImage import *
 import argparse
 import time
 import datetime
 import glob
+import re
+import json
+import tempfile
+from GetLink import GetLink
 def menu():
     parser = argparse.ArgumentParser(description='Convert video lecture to image')
     #mass converter mode
     mass_convert = parser.add_argument_group('Mass mode converter'.upper())
     mass_convert.add_argument('-MM','--mass-mode',help="Enable mass mode",default=False,action="store_true")
-    mass_convert.add_argument('-fip','--folder-input-path',help="Folder input path",default="")
-
+    mass_convert.add_argument('-fsp','--folder-subs-path',help="Convert all subtitle in folder. REQUIRE -MM flag",default='',type=str)
+    mass_convert.add_argument('-lvjp','--list-video-json-path',help="""List to video json file with structure"
+                                                                    [ [<subtitle_link_1>,<video_link_1>,<folder_name_1>],
+                                                                     [<subtitle_link_2>,<video_link_2>,<folder_name_2>],
+                                                                      ... and so on
+                                                                    ]
+                                                                    """,default='',type=str)
     #general
     general = parser.add_argument_group('Input/Output'.upper())
     general.add_argument('-vp','--video-file-path',help="Path to video file",default='')
-    general.add_argument('-sp','--sub-file-path',help="Path to subtitle file",required=True)
+    general.add_argument('-sp','--sub-file-path',help="Path to subtitle file",default='')
     general.add_argument('-sc',"--subtitle-color",help="Subtitle color R G B, value=0..255\n Default: %s" % str(ConvertVideoLectureToImage.TEXT_COLOR)\
                         ,type=int,nargs=3,required=False,metavar=('R','G','B'),default=ConvertVideoLectureToImage.TEXT_COLOR)
     general.add_argument("-G","--to-grayscale",\
@@ -176,7 +186,11 @@ def menu():
     appearance.add_argument('-tmt',"--time-margin-top-percent",\
                         help="Time margin top\n Default: {0}".format(ConvertVideoLectureToImage.TIME_MARGIN_TOP_PERCENT)\
                         ,type=float,default=ConvertVideoLectureToImage.TIME_MARGIN_TOP_PERCENT)
+    appearance.add_argument('-dt',"--difference-threshold",\
+                        help="Use threshold to remove duplicate mid,end\n Default: {0}".format(ConvertVideoLectureToImage.DIFF_THRESHOLD)\
+                        ,type=int,default=ConvertVideoLectureToImage.DIFF_THRESHOLD)
 
+    #diff_threshold
     others = parser.add_argument_group('Others'.upper())
     others.add_argument('-ct',"--collision-shifting-time",\
                         help="Avoid the instance which the next image have same subtitle with current one\n Default: {0}"\
@@ -200,9 +214,7 @@ def menu():
                         default=ConvertVideoLectureToImage.RESUME,action="store_true")
 
     return parser
-def main():
-    parser = menu()
-    args = parser.parse_args()
+def get_converter(args):
     c = ConvertVideoLectureToImage(args.video_file_path,\
                                     args.sub_file_path,\
                                     args.output_path)
@@ -249,9 +261,51 @@ def main():
     c.IMAGE_OUTPUT_HEIGHT = args.image_output_height
     c.IS_RESIZE = args.enable_resize_output_image
 
+    c.MASS_MODE = args.mass_mode
+
+    c.DIFF_THRESHOLD = args.difference_threshold
+    c.outputPath = args.output_path
+    return c
+def main():
+    parser = menu()
+    args = parser.parse_args()
     start = time.clock()
-    c.gen_image()
+    if args.mass_mode:
+        orgOutputPath = args.output_path
+        if args.folder_subs_path:
+            for sub_file in filter(lambda f: re.search(r"\{0}".format(ConvertVideoLectureToImage.SUBTITLE_EXT), f),\
+                                os.listdir(args.folder_subs_path)):
+                try:
+                    args.video_file_path = ''
+                    args.sub_file_path = os.path.join(args.folder_subs_path,sub_file)
+                    args.output_path = ''
+                    get_converter(args).gen_image()
+                except Exception:
+                    continue
+        elif args.list_video_json_path:
+            if args.output_path == '':
+                raise Exception("Require setting output path")
+            rowList =json.loads(open(args.list_video_json_path,'r').read())
+            cookies = []
+            if args.cookie_json_path:
+                cookies = open(args.cookie_json_path,'r').read()
+            for row in rowList:
+                subTempFile = tempfile.NamedTemporaryFile('w',delete=False)
+                subTitleContent = GetLink(row[0],cookies).getContent()
+                subTempFile.write(subTitleContent)
+                subTempName = subTempFile.name
+                subTempFile.close()
+                args.video_file_path = GetLink(url=row[1],cookiesJsonContent=cookies).get()
+                outputFolderName = row[-1]
+                args.sub_file_path = subTempName
+                args.output_path = orgOutputPath + '/' + outputFolderName
+                get_converter(args).gen_image()
+                os.unlink(subTempName)
+    else:
+        get_converter(args).gen_image()
     elapsed = time.clock() - start
-    sys.stdout.write("\nElapsed time: %s" % datetime.timedelta(seconds=elapsed))
+    sys.stdout.write("\nElapsed time: %s\n" % datetime.timedelta(seconds=elapsed))
+
+
 if __name__ == '__main__':
     main()

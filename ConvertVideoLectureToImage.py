@@ -7,6 +7,7 @@
 # Created:     11/01/2014
 # Licence:      MIT
 #-------------------------------------------------------------------------------
+from doctest import _OutputRedirectingPdb
 
 import numpy
 import math
@@ -22,9 +23,10 @@ from datetime import timedelta
 import cv2
 import cv2.cv as cv
 import pysrt
+from selenium.webdriver.support.expected_conditions import element_selection_state_to_be
 
 import GetLink
-
+import logging
 
 class ConvertVideoLectureToImage:
     SUBTITLE_EXT = '.srt'
@@ -64,8 +66,6 @@ class ConvertVideoLectureToImage:
     TO_TAR = False
     TAR_PATH = ''
 
-    SCENE_DETECTION = False
-    SCENE_THREADHOLD = 10
 
     COOKIE_JSON_PATH = ''
 
@@ -80,6 +80,11 @@ class ConvertVideoLectureToImage:
 
     REMOVE_OUTPUT_IMG = False
 
+    DIFF_THRESHOLD = 1000
+    AVOID_DUPLICATE_MID_END_IMAGE = True
+
+
+    MASS_MODE = False
     def __init__(self, videoPath, subPath, outputPath=''):
         """
 
@@ -90,28 +95,11 @@ class ConvertVideoLectureToImage:
         """
         self.videoPath = videoPath
         self.subPath = subPath
+        self.orgSubPath = subPath
         self.compressParams = []
         self.tarPath = None
-        if outputPath == '':
-            self.outputPath = subPath.split('.')[0]
-        else:
-            self.outputPath = outputPath + '/' + path.basename(self.subPath).split('.')[0]
-        if not path.isdir(self.outputPath):
-            try:
-                os.mkdir(self.outputPath)
-            except:
-                os.mkdir(self.outputPath + '_')
-
-        def getSubFileNameWithoutExt(subPath):
-            return subPath.split('.')[0]
-
-        if videoPath == '':
-            subFilenameWithoutExt = getSubFileNameWithoutExt(subPath)
-            self.videoPath = subFilenameWithoutExt + self.VIDEO_EXTENSION
-
-        if not path.exists(self.subPath):
-            raise Exception("Cannot find subtitle file name " + self.subPath)
-
+        self.outputPath = ''
+        logging.basicConfig(filename='error.log',level=logging.ERROR,filemode='w')
 
     def read_frame_at_mil(self, videoCapture, mil):
         """
@@ -124,7 +112,7 @@ class ConvertVideoLectureToImage:
             if not flag:
                 videoCapture.set(cv2.CV_CAP_PROP_POS_MSEC, mil)
                 print "frame is not ready"
-                cv2.WaitKey(1000)
+                cv2.waitKey(1000)
             else:
                 return self.preprocess_frame(frame)
 
@@ -196,6 +184,16 @@ class ConvertVideoLectureToImage:
         return {'lineList': line_list, 'x': pos_x, 'y': pos_y, 'lineHeight': text_height}
 
     def prepare_vid_and_sub(self):
+        if self.outputPath == '':
+            self.outputPath = self.subPath.split('.')[0]
+        elif not self.MASS_MODE:
+            self.outputPath = self.outputPath + '/' + path.basename(self.subPath).split('.')[0]
+        if not path.isdir(self.outputPath):
+            try:
+                os.mkdir(self.outputPath)
+            except:
+                os.mkdir(self.outputPath + '_')
+
         if self.SHOW_MID: self.COUNT_INCREMENT += 1
 
         if self.SHOW_END: self.COUNT_INCREMENT += 1
@@ -209,7 +207,7 @@ class ConvertVideoLectureToImage:
             self.compressParams = [cv2.cv.CV_IMWRITE_PNG_COMPRESSION, self.COMPRESS_LEVEL_PNG, 0]
 
         if self.videoPath.startswith('http'):
-            self.videoPath = GetLink.GetLink(url=self.videoPath, cookiesJsonPath=self.COOKIE_JSON_PATH).get()
+            self.videoPath = GetLink.GetLink(url=self.videoPath, cookiesJsonContent=(open(self.COOKIE_JSON_PATH,'r').read())).get()
             self.videoPath = self.videoPath.replace('https', 'http')
             ##print self.videoPath
 
@@ -222,6 +220,16 @@ class ConvertVideoLectureToImage:
             #'a' if path.exists(self.tarPath) else
             self.tarFile = tarfile.open(self.tarPath, mode)
 
+        def getSubFileNameWithoutExt(subPath):
+            return '.'.join(subPath.split('.')[0:-1])
+
+        if self.videoPath == '':
+            subFilenameWithoutExt = getSubFileNameWithoutExt(self.subPath)
+            self.videoPath = subFilenameWithoutExt + self.VIDEO_EXTENSION
+
+        if not path.exists(self.subPath):
+            raise Exception("Cannot find subtitle file name " + self.subPath)
+
         self.sub = self.read_subtitle()
         #font prepare
         self.FONT_FACE = eval("cv2." + self.FONT_FACE)
@@ -232,7 +240,8 @@ class ConvertVideoLectureToImage:
                 raise Exception("Need FONT_PATH argument for Unicode mode")
         self.video_capture = cv2.VideoCapture()
         if not self.video_capture.open(self.videoPath):
-            raise Exception("Cannot open video file")
+            logging.error("Cannot open video file: %s",self.videoPath)
+            raise Exception("Cannot open video file: %s" % self.videoPath)
         self.width = int(self.video_capture.get(cv.CV_CAP_PROP_FRAME_WIDTH))
         self.height = int(self.video_capture.get(cv.CV_CAP_PROP_FRAME_HEIGHT))
         if self.IS_RESIZE:
@@ -280,31 +289,33 @@ class ConvertVideoLectureToImage:
     def add_text_unicode(self, file_path, textProps, frame, miltime):
         image_file = Image.fromarray(frame) #open(file_path)
         img_draw = ImageDraw.Draw(image_file)
+        border_color = self.rgb2hex(self.BORDER_COLOR[0], self.BORDER_COLOR[1], self.BORDER_COLOR[2])
+        text_color = self.rgb2hex(self.TEXT_COLOR[0], self.TEXT_COLOR[1], self.TEXT_COLOR[2])
         for line_num, text in enumerate(textProps['lineList']):
             for x, y in self.gen_border_pos(textProps['x'], textProps['y']):
                 img_draw.text((x,
                                y + int(textProps["lineHeight"] * (1 + self.SUB_LINE_MARGIN_BOTTOM)) * line_num),
                               text,
-                              self.rgb2hex(self.BORDER_COLOR[0], self.BORDER_COLOR[1], self.BORDER_COLOR[2]),
+                              border_color,
                               self.font)
             img_draw.text((textProps['x'],
                            textProps['y'] + int(
                                textProps["lineHeight"] * (1 + self.SUB_LINE_MARGIN_BOTTOM)) * line_num),
                           text,
-                          self.rgb2hex(self.TEXT_COLOR[0], self.TEXT_COLOR[1], self.TEXT_COLOR[2]),
+                          text_color,
                           self.font)
         if self.SHOW_TIME:
             #text_width, text_height = self.font.getsize(text)
             timePos = self.get_time_pos()
             time = self.mil_to_humanreadable_str(miltime)
             for x, y in self.gen_border_pos(timePos[0], timePos[1]):
-                img_draw.text(timePos,
+                img_draw.text((x,y),
                               time,
-                              self.rgb2hex(self.BORDER_COLOR[0], self.BORDER_COLOR[1], self.BORDER_COLOR[2]),
+                              border_color,
                               self.font)
             img_draw.text(timePos,
                           time,
-                          self.rgb2hex(self.TEXT_COLOR[0], self.TEXT_COLOR[1], self.TEXT_COLOR[2]),
+                          text_color,
                           self.font)
             # Convert RGB to BGR
         open_cv_image = numpy.array(image_file)
@@ -354,7 +365,7 @@ class ConvertVideoLectureToImage:
                         timePos,
                         self.FONT_FACE,
                         self.FONTSCALE,
-                        (self.TEXT_COLOR[2], self.TEXT_COLOR[1], self.TEXT_COLOR[0]),
+                        [self.TEXT_COLOR[2], self.TEXT_COLOR[1], self.TEXT_COLOR[0]],
                         self.THICKNESS,
                         lineType=cv2.CV_AA)
         self.write_frame_to_img(frame, file_path)
@@ -372,53 +383,68 @@ class ConvertVideoLectureToImage:
         skip = 0
 
         total_subtitle_row = len(self.sub)
-
-        progress_bar = self.progress_bar(total_subtitle_row * self.COUNT_INCREMENT)
+        estimated_row = total_subtitle_row * self.COUNT_INCREMENT
 
         add_text = self.add_text_unicode if self.UNICODE else self.add_text_ascii
         wrap_text = self.wrap_text_unicode if self.UNICODE else self.wrap_text_ascii
 
+        count = 0
+        print('{0}'.format(path.basename(self.outputPath)))
         for row_num, row in enumerate(self.sub):
-
-            progress_bar((row_num + 1) * self.COUNT_INCREMENT)
-
             from_time, to_time = row['from'], row['to']
             text_props = wrap_text(row['text'])
 
             #get image at from_time
             img_file_out = img_path_gen.next()
-
+            #start image with subtitle
             if True == self.RESUME and path.isfile(img_file_out):
                 skip += 1
                 continue
+            else:
+                frame = self.read_frame_at_mil(self.video_capture, from_time)
+                count+=1
 
-            frame = self.read_frame_at_mil(self.video_capture, from_time)
+            org_frame = numpy.empty_like(frame)
+            if self.SHOW_MID or self.SHOW_END:
+                numpy.copyto(org_frame,frame)
             add_text(img_file_out, text_props, frame, from_time)
             text_props['lineList'] = []
-            if self.SCENE_DETECTION:
-                pass
-            else:
             #get image at mid_time
-                if self.SHOW_MID:
-                    img_file_out = img_path_gen.next()
-                    if self.RESUME == True and path.isfile(img_file_out):
-                        skip += 1
-                        continue
+            mid_frame = None
+            if self.SHOW_MID:
+                if self.RESUME and path.isfile(img_file_out):
+                    skip += 1
+                else:
                     mid_time = (from_time + to_time) / 2
-                    frame = self.read_frame_at_mil(self.video_capture, mid_time)
-                    add_text(img_file_out, text_props, frame, mid_time)
-                    #self.writeFrameToImg(frame,img_file_out)
+                    mid_frame = self.read_frame_at_mil(self.video_capture, mid_time)
+                    if self.AVOID_DUPLICATE_MID_END_IMAGE and self.is_difference(org_frame,mid_frame):
+                        count+=1
+                        ##print "Diff {0}".format(cv2.norm(org_frame,mid_frame))
+                        img_file_out = img_path_gen.next()
+                        add_text(img_file_out, text_props, mid_frame, mid_time)
+                    else:
+                        estimated_row -= 1
+                #self.writeFrameToImg(frame,img_file_out)
 
-                #get image at to_time
-                if self.SHOW_END:
-                    img_file_out = img_path_gen.next()
-                    if self.RESUME == True and path.isfile(img_file_out):
-                        skip += 1
-                        continue
-                    frame = self.read_frame_at_mil(self.video_capture, to_time)
-                    add_text(img_file_out, text_props, frame, to_time)
+            #get image at to_time
+            if self.SHOW_END:
+                if self.RESUME and path.isfile(img_file_out):
+                    skip += 1
+                else:
+                    end_frame = self.read_frame_at_mil(self.video_capture, to_time)
+                    if (mid_frame is not None and self.is_difference(mid_frame,end_frame)) or \
+                            (mid_frame is None and self.is_difference(org_frame,end_frame)):
+                        count += 1
+                        img_file_out = img_path_gen.next()
+                        add_text(img_file_out, text_props, end_frame, to_time)
+                    else:
+                        estimated_row -= 1
                     #self.writeFrameToImg(text_props,img_file_out)
-        sys.stdout.write("\nSkip %d/%d image" % (skip, total_subtitle_row))
+            self.progress_bar(estimated_row)(count)
+        if not self.RESUME:
+            print("\nSkip %d/%d subtitle row" % (skip, estimated_row))
+        else:
+            print("\nSkip %d/%d subtitle row" % (skip))
         self.video_capture.release()
 
         if self.TO_TAR:
@@ -427,7 +453,7 @@ class ConvertVideoLectureToImage:
         if self.REMOVE_OUTPUT_IMG:
             shutil.rmtree(self.outputPath)
 
-        print '\nDone!'
+        print 'Done!\n'
 
 
     def read_subtitle(self):
@@ -462,25 +488,15 @@ class ConvertVideoLectureToImage:
         def run(count):
             count = float(count)
             percent = 100 * count / complete
-            sys.stdout.write('\r[{0}] - {1}% - {2}/{3} Total'.format('#' * int(math.ceil(bar_width * count / complete))
-                , round(percent, 2)
+            sys.stdout.write("\r[{0}] - {1}% - {2}/{3} Total".format('#' * int(math.ceil(bar_width * count / complete))
+                ,round(percent, 2)
                 , int(count)
                 , complete))
-
         return run
 
     @staticmethod
     def rgb2hex(r, g, b):
         return '#{:02x}{:02x}{:02x}'.format(r, g, b)
 
-
-class SceneDetection:
-    def getScene(self, videoCapture, startTime, endTime):
-        prev_frame = None
-        for frame in videoCapture.getFrame(startTime, endTime):
-            if prev_frame <> None:
-                prev_frame = frame
-            else:
-                if isSceneCut(prev_frame, frame):
-                    writeFrameToFile(frame, filename)
-                prev_frame = frame
+    def is_difference(self,frame1,frame2):
+        return True if cv2.norm(frame1,frame2)>=self.DIFF_THRESHOLD else False
