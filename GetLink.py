@@ -21,7 +21,7 @@ class GetLink:
         self.data = data
         self.cookiesJsonContent = cookiesJsonContent
         self.readCookie()
-    def readCookie(self):
+    def readCookie(self): 
         if self.cookiesJsonContent != '':
             cookiesJson=json.loads(self.cookiesJsonContent)
             self.cookies = dict(map(lambda cookie: (cookie["name"],cookie["value"]),cookiesJson))

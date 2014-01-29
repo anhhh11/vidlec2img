@@ -80,7 +80,7 @@ class ConvertVideoLectureToImage:
 
     REMOVE_OUTPUT_IMG = False
 
-    DIFF_THRESHOLD = 5500
+    DIFF_THRESHOLD = 8000
     AVOID_DUPLICATE_MID_END_IMAGE = True
 
 
@@ -107,10 +107,9 @@ class ConvertVideoLectureToImage:
         @rtype : cv2 frame
         """
         while True:
-            pos_frame = videoCapture.get(cv.CV_CAP_PROP_POS_FRAMES)
+            videoCapture.set(cv2.cv.CV_CAP_PROP_POS_MSEC, mil)
             flag, frame = videoCapture.read()
             if not flag:
-                videoCapture.set(cv2.CV_CAP_PROP_POS_MSEC, mil)
                 print "frame is not ready"
                 cv2.waitKey(1000)
             else:
@@ -118,7 +117,6 @@ class ConvertVideoLectureToImage:
 
     def write_frame_to_img(self, frame, filepath):
         """
-
         @param frame: opencv frame
         @param filepath: path to file
         @return: @raise Exception: Cannot write to file
@@ -211,7 +209,8 @@ class ConvertVideoLectureToImage:
             self.compressParams = [cv2.cv.CV_IMWRITE_PNG_COMPRESSION, self.COMPRESS_LEVEL_PNG, 0]
 
         if self.videoPath.startswith('http'):
-            self.videoPath = GetLink.GetLink(url=self.videoPath, cookiesJsonContent=(open(self.COOKIE_JSON_PATH,'r').read())).get()
+            cookiesJsonContent='' if self.COOKIE_JSON_PATH=='' else open(self.COOKIE_JSON_PATH,'r').read()
+            self.videoPath = GetLink.GetLink(url=self.videoPath, cookiesJsonContent=cookiesJsonContent).get()
             self.videoPath = self.videoPath.replace('https', 'http')
             ##print self.videoPath
 
@@ -474,7 +473,6 @@ class ConvertVideoLectureToImage:
                 for i in range(0, len(sub)):
                     if sub[i]['from'] == sub[i - 1]['to']:
                         sub[i]['from'] += self.COLLISION_SHIFTING_MILISECONDS
-
             self.fixSubTextCollision(subList)
         return subList
 

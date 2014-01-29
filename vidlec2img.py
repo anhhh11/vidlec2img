@@ -278,7 +278,7 @@ def main():
                 try:
                     args.video_file_path = ''
                     args.sub_file_path = os.path.join(args.folder_subs_path,sub_file)
-                    args.output_path = ''
+                    args.output_path = '' if orgOutputPath=='' else  orgOutputPath + '/' + path.basename(args.sub_file_path)
                     get_converter(args).gen_image()
                 except Exception:
                     continue
@@ -286,7 +286,7 @@ def main():
             if args.output_path == '':
                 raise Exception("Require setting output path")
             rowList =json.loads(open(args.list_video_json_path,'r').read())
-            cookies = []
+            cookies = ''
             if args.cookie_json_path:
                 cookies = open(args.cookie_json_path,'r').read()
             for row in filter(lambda x: x[0],rowList):

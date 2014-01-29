@@ -3,6 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="e7497899-56d5-476a-b1eb-f11a2cf6356e" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ConvertVideoLectureToImage.py" afterPath="$PROJECT_DIR$/ConvertVideoLectureToImage.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GetLink.py" afterPath="$PROJECT_DIR$/GetLink.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/error.log" afterPath="$PROJECT_DIR$/error.log" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vidlec2img.py" afterPath="$PROJECT_DIR$/vidlec2img.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
@@ -30,10 +32,8 @@
       <file leaf-file-name="vidlec2img.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/vidlec2img.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="4740">
-              <folding>
-                <element signature="e#1415#1452#0" expanded="true" />
-              </folding>
+            <state line="18" column="61" selection-start="673" selection-end="673" vertical-scroll-proportion="0.0" vertical-offset="270" max-vertical-offset="4755">
+              <folding />
             </state>
           </provider>
         </entry>
@@ -41,7 +41,7 @@
       <file leaf-file-name="GetLink.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/GetLink.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="46" column="31" selection-start="1390" selection-end="1390" vertical-scroll-proportion="0.0" vertical-offset="690" max-vertical-offset="810">
+            <state line="46" column="31" selection-start="1391" selection-end="1391" vertical-scroll-proportion="0.0" vertical-offset="690" max-vertical-offset="825">
               <folding />
             </state>
           </provider>
@@ -50,7 +50,7 @@
       <file leaf-file-name="pydevd.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/pydevd.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="1154" column="31" selection-start="47926" selection-end="47926" vertical-scroll-proportion="0.0" vertical-offset="17310" max-vertical-offset="22080">
+            <state line="1154" column="31" selection-start="47926" selection-end="47926" vertical-scroll-proportion="0.0" vertical-offset="17310" max-vertical-offset="23070">
               <folding />
             </state>
           </provider>
@@ -68,7 +68,7 @@
       <file leaf-file-name="ConvertVideoLectureToImage.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/ConvertVideoLectureToImage.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="82" column="25" selection-start="1751" selection-end="1751" vertical-scroll-proportion="0.18987341" vertical-offset="1155" max-vertical-offset="7665">
+            <state line="112" column="0" selection-start="2638" selection-end="2638" vertical-scroll-proportion="0.4177215" vertical-offset="1515" max-vertical-offset="7650">
               <folding>
                 <element signature="e#289#330#0" expanded="true" />
               </folding>
@@ -500,9 +500,7 @@
     <entry file="file://$PROJECT_DIR$/vidlec2img.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="210" column="32" selection-start="13774" selection-end="13774" vertical-scroll-proportion="0.0" vertical-offset="3150" max-vertical-offset="3930">
-          <folding>
-            <element signature="e#1415#1452#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -525,9 +523,7 @@
     <entry file="file://$PROJECT_DIR$/vidlec2img.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="49" column="40" selection-start="2365" selection-end="2365" vertical-scroll-proportion="0.0" vertical-offset="735" max-vertical-offset="3825">
-          <folding>
-            <element signature="e#1415#1452#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -563,7 +559,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/GetLink.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="46" column="31" selection-start="1390" selection-end="1390" vertical-scroll-proportion="0.0" vertical-offset="202" max-vertical-offset="795">
+        <state line="46" column="31" selection-start="1391" selection-end="1391" vertical-scroll-proportion="0.0" vertical-offset="690" max-vertical-offset="825">
           <folding />
         </state>
       </provider>
@@ -577,16 +573,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/vidlec2img.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="4740">
-          <folding>
-            <element signature="e#1415#1452#0" expanded="true" />
-          </folding>
+        <state line="18" column="61" selection-start="673" selection-end="673" vertical-scroll-proportion="0.0" vertical-offset="51" max-vertical-offset="4620">
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ConvertVideoLectureToImage.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="82" column="25" selection-start="1751" selection-end="1751" vertical-scroll-proportion="0.18987341" vertical-offset="1155" max-vertical-offset="7665">
+        <state line="112" column="0" selection-start="2638" selection-end="2638" vertical-scroll-proportion="0.4177215" vertical-offset="1515" max-vertical-offset="7650">
           <folding>
             <element signature="e#289#330#0" expanded="true" />
           </folding>
