@@ -30,6 +30,7 @@
 #http://stackoverflow.com/questions/18974194/text-shadow-with-python
 #show time idea
 #http://www.frisnit.com/2011/07/07/iplayer-for-kindle/
+#http://stackoverflow.com/questions/2186525/use-a-glob-to-find-files-recursively-in-python
 from _testcapi import raise_exception
 from ConvertVideoLectureToImage import *
 import argparse
@@ -39,6 +40,8 @@ import glob
 import re
 import json
 import tempfile
+import fnmatch
+import multiprocessing
 from GetLink import GetLink
 def menu():
     parser = argparse.ArgumentParser(description='Convert video lecture to image')
@@ -46,18 +49,28 @@ def menu():
     mass_convert = parser.add_argument_group('Mass mode converter'.upper())
     mass_convert.add_argument('-MM','--mass-mode',help="Enable mass mode",default=False,action="store_true")
     mass_convert.add_argument('-fsp','--folder-subs-path',help="Convert all subtitle in folder. REQUIRE -MM flag",default='',type=str)
+    mass_convert.add_argument('-rfp','--recursive-folder-path',help="Convert all subtitle in folder recursively. REQUIRE -MM flag",default='',type=str)
+    mass_convert.add_argument('-ve','--video-extensions',help="Video file extension {0}".format(ConvertVideoLectureToImage.VIDEO_EXTENSION),\
+                                default=ConvertVideoLectureToImage.VIDEO_EXTENSION,type=str)
     mass_convert.add_argument('-lvjp','--list-video-json-path',help="""List to video json file with structure"
                                                                     [ [<subtitle_link_1>,<video_link_1>,<folder_name_1>],
                                                                      [<subtitle_link_2>,<video_link_2>,<folder_name_2>],
                                                                       ... and so on
-                                                                    ]
-                                                                    """,default='',type=str)
+                                                                    ]""",type=str)
+    mass_convert.add_argument('-nt',"--number-of-thread",help="""Support process multiple links or video files at once. Default: {0}
+                                                              """.format(2),default=2,type=int)
+
     #general
     general = parser.add_argument_group('Input/Output'.upper())
     general.add_argument('-vp','--video-file-path',help="Path to video file",default='')
     general.add_argument('-sp','--sub-file-path',help="Path to subtitle file",default='')
     general.add_argument('-sc',"--subtitle-color",help="Subtitle color R G B, value=0..255\n Default: %s" % str(ConvertVideoLectureToImage.TEXT_COLOR)\
                         ,type=int,nargs=3,required=False,metavar=('R','G','B'),default=ConvertVideoLectureToImage.TEXT_COLOR)
+
+    general.add_argument('-mrn',"--max-retry-number",\
+                        help="Max retry number. Default: {0}".format(ConvertVideoLectureToImage.MAX_RETRY_NUMBER),\
+                        default=ConvertVideoLectureToImage.MAX_RETRY_NUMBER,type=int)
+
     general.add_argument("-G","--to-grayscale",\
                         help="Font scale\n Default: {0}".format(ConvertVideoLectureToImage.TO_GRAYSCALE),\
                         default=ConvertVideoLectureToImage.TO_GRAYSCALE,
@@ -264,8 +277,29 @@ def get_converter(args):
     c.MASS_MODE = args.mass_mode
 
     c.DIFF_THRESHOLD = args.difference_threshold
+    c.VIDEO_EXTENSION = args.video_extensions
+
+
+    c.MAX_RETRY_NUMBER = args.max_retry_number
+
     c.outputPath = args.output_path
     return c
+
+
+def gen_image_from_link(args, cookies, orgOutputPath, row):
+    subTempFile = tempfile.NamedTemporaryFile('w', delete=False)
+    subTitleContent = GetLink(row[0], cookies).getContent()
+    subTempFile.write(subTitleContent)
+    subTempName = subTempFile.name
+    subTempFile.close()
+    args.video_file_path = GetLink(url=row[1], cookiesJsonContent=cookies).get()
+    outputFolderName = row[-1]
+    args.sub_file_path = subTempName
+    args.output_path = orgOutputPath + '/' + outputFolderName
+    get_converter(args).gen_image()
+    os.unlink(subTempName)
+
+
 def main():
     parser = menu()
     args = parser.parse_args()
@@ -282,6 +316,16 @@ def main():
                     get_converter(args).gen_image()
                 except Exception:
                     continue
+        elif args.recursive_folder_path:
+            matches = []
+            for root, dirnames, filenames in os.walk(args.recursive_folder_path):
+              for filename in fnmatch.filter(filenames, '*{0}'.format(ConvertVideoLectureToImage.SUBTITLE_EXT)):
+                    matches.append(os.path.join(root, filename))
+            for sub_path in matches:
+                args.video_file_path = ''
+                args.sub_file_path = sub_path
+                args.output_path = '' if orgOutputPath=='' else  orgOutputPath + '/' + path.basename(args.sub_file_path)
+                get_converter(args).gen_image()
         elif args.list_video_json_path:
             if args.output_path == '':
                 raise Exception("Require setting output path")
@@ -290,17 +334,7 @@ def main():
             if args.cookie_json_path:
                 cookies = open(args.cookie_json_path,'r').read()
             for row in filter(lambda x: x[0],rowList):
-                subTempFile = tempfile.NamedTemporaryFile('w',delete=False)
-                subTitleContent = GetLink(row[0],cookies).getContent()
-                subTempFile.write(subTitleContent)
-                subTempName = subTempFile.name
-                subTempFile.close()
-                args.video_file_path = GetLink(url=row[1],cookiesJsonContent=cookies).get()
-                outputFolderName = row[-1]
-                args.sub_file_path = subTempName
-                args.output_path = orgOutputPath + '/' + outputFolderName
-                get_converter(args).gen_image()
-                os.unlink(subTempName)
+                gen_image_from_link(args, cookies, orgOutputPath, row)
     else:
         get_converter(args).gen_image()
     elapsed = time.clock() - start

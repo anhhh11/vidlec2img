@@ -83,6 +83,7 @@ class ConvertVideoLectureToImage:
     DIFF_THRESHOLD = 8000
     AVOID_DUPLICATE_MID_END_IMAGE = True
 
+    MAX_RETRY_NUMBER = 2
 
     MASS_MODE = False
     def __init__(self, videoPath, subPath, outputPath=''):
@@ -106,12 +107,15 @@ class ConvertVideoLectureToImage:
 
         @rtype : cv2 frame
         """
+        retryCounter = 0
         while True:
             videoCapture.set(cv2.cv.CV_CAP_PROP_POS_MSEC, mil)
             flag, frame = videoCapture.read()
             if not flag:
                 print "frame is not ready"
+                retryCounter+=1
                 cv2.waitKey(1000)
+                if retryCounter > self.MAX_RETRY_NUMBER: exit("Exceed max retries, checking whether or not your video or subtitle have problem!!!")
             else:
                 return self.preprocess_frame(frame)
 
